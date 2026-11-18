@@ -194,6 +194,7 @@ function App() {
     <footer>
       <span>Data Table Lib</span>
       <span>Creada por <a href="https://isai-dev.com" target="_blank" rel="noreferrer">Jaziel Isaí · isai-dev.com</a></span>
+      <a href={`${repository}/blob/main/LICENSE`} target="_blank" rel="noreferrer">Licencia MIT</a>
       <a className="footer-repository" href={repository} target="_blank" rel="noreferrer">Código en GitHub</a>
     </footer>
   </>;

@@ -4,6 +4,8 @@ Tablas React para mostrar, explorar, seleccionar y editar datos. Incluye `Table`
 
 Creada por [Jaziel Isaí](https://isai-dev.com).
 
+Licencia [MIT](./LICENSE). Puedes usar, modificar y distribuir la librería conservando el aviso de copyright y la licencia.
+
 ## Instalar y ejecutar
 
 Requiere React y React DOM 18 o 19 en la aplicación. Para desarrollar o compilar este repositorio se recomienda Node.js 22.12+ (también 24 o 26 LTS); [Vite 8 admite Node 20.19+ o 22.12+](https://vite.dev/guide/). La librería está publicada en npm como [`@isai_dev/data_table_lib`](https://www.npmjs.com/package/@isai_dev/data_table_lib).
