@@ -1,17 +1,22 @@
 const display = (value) => value == null ? '' : String(value);
+const cellText = (value, column, row) => column.type === 'image'
+  ? display((typeof column.imageAlt === 'function'
+    ? column.imageAlt(value, row) : column.imageAlt) ?? value?.alt)
+  : display(value);
 
 export function filterRows(rows, columns, search, filters) {
-  const searchable = columns.filter((column) => !column.hidden && column.searchable !== false);
+  const searchable = columns.filter((column) => !column.hidden && column.searchable !== false
+    && (column.type !== 'image' || column.searchable === true));
   const query = String(search ?? '').trim().toLocaleLowerCase();
   return rows.filter((row) => {
     if (query && !searchable.some((column) =>
-      display(row[column.field]).toLocaleLowerCase().includes(query))) return false;
+      cellText(row[column.field], column, row).toLocaleLowerCase().includes(query))) return false;
     return Object.entries(filters ?? {}).every(([field, filter]) => {
       if (filter == null || filter === '') return true;
       const column = columns.find((item) => item.field === field);
       if (!column) return true;
       if (column.filterFn) return column.filterFn(row[field], filter, row);
-      return display(row[field]).toLocaleLowerCase().includes(
+      return cellText(row[field], column, row).toLocaleLowerCase().includes(
         display(filter).toLocaleLowerCase()
       );
     });
@@ -34,7 +39,7 @@ export function sortRows(rows, sort, columns) {
       ? column.sortFn(left, right, a.row, b.row)
       : typeof left === 'number' && typeof right === 'number'
         ? left - right
-        : collator.compare(display(left), display(right));
+        : collator.compare(cellText(left, column, a.row), cellText(right, column, b.row));
     return result * multiplier || a.index - b.index;
   }).map(({ row }) => row);
 }

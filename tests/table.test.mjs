@@ -29,6 +29,49 @@ test('exports ESM and CommonJS components', () => {
   }
 });
 
+test('image presentation can be configured and changed by the viewer', () => {
+  const columns = [
+    { field: 'photo', headerName: 'Foto', type: 'image', searchable: false },
+    { field: 'name', headerName: 'Nombre' }
+  ];
+  const rows = [{ id: 1, name: 'Ana', photo: { src: '/ana.jpg', alt: 'Retrato de Ana' } }];
+  const views = [];
+  const props = { columns, rows, allowImageViewChange: true, onImageViewChange: (view) => views.push(view) };
+  const { rerender } = render(React.createElement(Table, { ...props, imageView: 'avatar' }));
+  assert.match(screen.getByRole('img', { name: 'Retrato de Ana' }).className, /dt-image-avatar/);
+  fireEvent.change(screen.getByRole('combobox', { name: 'Vista de fotos' }),
+    { target: { value: 'large' } });
+  assert.deepEqual(views, ['large']);
+  rerender(React.createElement(Table, { ...props, imageView: 'large' }));
+  assert.match(screen.getByRole('img', { name: 'Retrato de Ana' }).className, /dt-image-large/);
+  rerender(React.createElement(Table, { ...props, imageView: 'hidden' }));
+  assert.equal(screen.queryByRole('img'), null);
+  assert.equal(screen.queryByRole('columnheader', { name: 'Foto' }), null);
+  assert.ok(screen.getByRole('combobox', { name: 'Vista de fotos' }));
+});
+
+test('missing images show a fallback and icon-only actions remain accessible', () => {
+  let opened = '';
+  render(React.createElement(Table, {
+    columns: [{ field: 'photo', headerName: 'Foto', type: 'image' }],
+    rows: [{ id: 1, name: 'Ana', photo: '/missing.jpg' }],
+    actions: [{ label: 'Ver perfil', iconName: 'view', iconOnly: true,
+      onClick: (row) => { opened = row.name; } }]
+  }));
+  fireEvent.error(screen.getByRole('img', { name: 'Foto de Ana' }));
+  assert.ok(screen.getByText('Sin foto'));
+  fireEvent.click(screen.getByRole('button', { name: 'Ver perfil' }));
+  assert.equal(opened, 'Ana');
+});
+
+test('image columns search their alt text only when explicitly enabled', () => {
+  const rows = [{ id: 1, name: 'Ana', photo: { src: '/ana.jpg', alt: 'Retrato de Ana' } }];
+  const columns = [{ field: 'photo', type: 'image' }, { field: 'name' }];
+  assert.equal(filterRows(rows, columns, 'retrato', {}).length, 0);
+  assert.equal(filterRows(rows, [{ ...columns[0], searchable: true }, columns[1]], 'retrato', {}).length, 1);
+  assert.equal(filterRows(rows, columns, '', { photo: 'retrato' }).length, 1);
+});
+
 test('renders headers, data, empty state and legacy props', () => {
   const html = renderToStaticMarkup(React.createElement(Table, {
     getColumns: [{ field: 'name', headerName: 'Name' }, { field: 'secret', hidden: true }],

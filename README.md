@@ -6,6 +6,8 @@ Creada por [Jaziel Isaí](https://isai-dev.com).
 
 Licencia [MIT](./LICENSE). Puedes usar, modificar y distribuir la librería conservando el aviso de copyright y la licencia.
 
+> Este repositorio incluye una vista previa de la versión 2. Las funciones de fotos y nuevos iconos todavía no forman parte de la versión estable publicada en npm.
+
 ## Instalar y ejecutar
 
 Requiere React y React DOM 18 o 19 en la aplicación. Para desarrollar o compilar este repositorio se recomienda Node.js 22.12+ (también 24 o 26 LTS); [Vite 8 admite Node 20.19+ o 22.12+](https://vite.dev/guide/). La librería está publicada en npm como [`@isai_dev/data_table_lib`](https://www.npmjs.com/package/@isai_dev/data_table_lib).
@@ -36,7 +38,33 @@ También puedes instalar el archivo generado con `npm install /ruta/al/archivo.t
 
 ## Ejemplos ejecutables
 
-`npm run examples` compila la librería y sirve [tres ejemplos independientes](./examples/README.md) en `http://localhost:5173/examples/`: tabla local, edición con validación y consulta simulada del servidor. Cada ejemplo importa las entradas públicas del paquete, igual que una aplicación consumidora.
+`npm run examples` compila la librería y sirve [cuatro ejemplos independientes](./examples/README.md) en `http://localhost:5173/examples/`: tabla local, edición con validación, consulta simulada del servidor y fotos con acciones. Cada ejemplo importa las entradas públicas del paquete, igual que una aplicación consumidora.
+
+## Fotos y acciones (vista previa de la versión 2)
+
+Usa `type: 'image'` para mostrar una URL o un objeto `{ src, alt }` en una columna. El desarrollador puede elegir la vista inicial: `avatar`, `thumbnail`, `large` o `hidden`. Con `allowImageViewChange`, quien usa la tabla puede cambiarla desde un selector. `imageView` y `onImageViewChange` permiten controlar la elección desde la aplicación; `defaultImageView` inicia el estado interno cuando no está controlado.
+
+```jsx
+const [imageView, setImageView] = useState('avatar');
+const columns = [
+  { field: 'photo', headerName: 'Foto', type: 'image', searchable: false,
+    imageFit: 'cover', imageFallback: 'Sin foto' },
+  { field: 'name', headerName: 'Nombre' }
+];
+const rows = [{ id: 1, name: 'Ana', photo: {
+  src: '/photos/ana.jpg', alt: 'Retrato de Ana' } }];
+
+<Table columns={columns} rows={rows}
+  imageView={imageView} onImageViewChange={setImageView}
+  allowImageViewChange
+  actions={[{ label: 'Ver perfil', iconName: 'view', iconOnly: true,
+    variant: 'primary', onClick: (row) => openProfile(row) }]}
+/>;
+```
+
+Los valores de imagen sin URL o con error de carga muestran `imageFallback` (por defecto, “Sin foto”). Usa un `alt` descriptivo para fotos con significado; también puedes definir `imageAlt(value, row)`. `imageFit` acepta `cover` o `contain` e `imagePosition` ajusta el recorte. La búsqueda global omite columnas de imagen por defecto; `searchable: true` permite buscar por el texto alternativo.
+
+Las acciones admiten `iconName`: `view`, `edit`, `delete`, `download`, `more`, `check` y `close`. También puedes pasar tu propio componente con `icon`. `iconOnly` oculta el texto visualmente, pero conserva el nombre accesible tomado de `label` o `ariaLabel`. `variant` acepta `default`, `primary` o `danger`; `iconPosition` acepta `start` o `end`. Los iconos integrados son SVG y no requieren una dependencia adicional.
 
 ## Página de presentación
 
@@ -203,6 +231,8 @@ Los tipos de celda son `text`, `date`, `number`, `file`, `select` y `button`. Lo
 | `paginationEnabled`, `pagination`, `onPaginationChange` | `boolean`, `{pageIndex, pageSize}`, función | Paginación opcional/controlada; `pageIndex` empieza en 0. |
 | `manualSorting`, `manualFiltering`, `manualPagination`, `rowCount` | booleanos, número | Operaciones delegadas al servidor. |
 | `selectable`, `selectedRowIds`, `onSelectionChange` | `boolean`, IDs, función | Selección opcional/controlada. |
+| `defaultImageView`, `imageView`, `onImageViewChange` | vista, vista, función | Vista de fotos inicial o controlada. |
+| `allowImageViewChange` | `boolean` | Muestra el selector de vista a quien usa la tabla. |
 | `loading`, `error` | `boolean`, `ReactNode` | Estado de carga y aviso de error. |
 | `emptyMessage`, `loadingMessage` | `ReactNode` | Textos de estado. |
 | `className` | `string` | Clase adicional del contenedor. |
@@ -221,7 +251,7 @@ Los tipos de celda son `text`, `date`, `number`, `file`, `select` y `button`. Lo
 }} />
 ```
 
-Cada columna acepta `field`, `headerName`, `hidden`, `sortable`, `filterable`, `searchable`, `sortFn`, `filterFn`, `type`, `options`, `placeholder`, `renderCell`, `validate`, `onChange`, `onClick`, `label`, `icon`, `ariaLabel` y `style`. Cada acción acepta `id`, `label`, `icon`, `ariaLabel`, `className`, `style`, `disabled` y `onClick`. Si sólo muestra un icono, proporciona `ariaLabel`.
+Cada columna acepta `field`, `headerName`, `hidden`, `sortable`, `filterable`, `searchable`, `sortFn`, `filterFn`, `type`, `options`, `placeholder`, `renderCell`, `validate`, `onChange`, `onClick`, `label`, `icon`, `ariaLabel` y `style`. Para `type: 'image'`, también acepta `imageAlt`, `imageFit`, `imagePosition` e `imageFallback`. Cada acción acepta `id`, `label`, `icon`, `iconName`, `iconOnly`, `iconPosition`, `variant`, `ariaLabel`, `className`, `style`, `disabled` y `onClick`. Si sólo muestra un icono, proporciona un `label` de texto o `ariaLabel`.
 
 Los nombres anteriores `getColumns`, `getRows`, `getButtons` y `onCaption` siguen disponibles. En `TableEdit`, `getButtons` conserva `onClick(event, row)`; el prop nuevo `actions` usa `onClick(row, event)`. Si pasas ambas versiones, prevalece el nombre nuevo.
 

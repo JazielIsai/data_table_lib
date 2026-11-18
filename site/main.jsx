@@ -4,6 +4,7 @@ import { Table } from '@isai_dev/data_table_lib';
 import BasicExample from '../examples/BasicExample.jsx';
 import EditableExample from '../examples/EditableExample.jsx';
 import RemoteExample from '../examples/RemoteExample.jsx';
+import PhotoExample from '../examples/PhotoExample.jsx';
 import '@isai_dev/data_table_lib/style.css';
 import './style.css';
 
@@ -48,6 +49,24 @@ import '@isai_dev/data_table_lib/style.css';
   onSave={async (draft, original) => {
     await savePerson(draft, original);
   }}
+/>`
+  },
+  {
+    id: 'photos',
+    label: 'Fotos · v2',
+    title: 'Fotos a tu manera · vista previa v2',
+    description: 'Prueba avatares, miniaturas, fotos grandes u ocúltalas. Los iconos de las acciones conservan etiquetas accesibles.',
+    Component: PhotoExample,
+    code: `const columns = [
+  { field: 'photo', headerName: 'Foto', type: 'image', imageFit: 'cover' },
+  { field: 'name', headerName: 'Nombre' }
+];
+
+<Table columns={columns} rows={people}
+  defaultImageView="avatar"
+  allowImageViewChange
+  actions={[{ label: 'Ver', iconName: 'view', iconOnly: true,
+    onClick: (row) => openProfile(row) }]}
 />`
   },
   {
@@ -155,7 +174,7 @@ function App() {
       <section className="demo-section" id="demo" aria-labelledby="demo-title">
         <div className="section-heading">
           <p className="eyebrow">Pruébala aquí</p>
-          <h2 id="demo-title">Una librería, tres formas de usarla.</h2>
+          <h2 id="demo-title">Una librería, cuatro formas de usarla.</h2>
           <p>Los ejemplos importan las mismas entradas públicas que usarías en otro proyecto.</p>
         </div>
         <div className="demo-switcher" role="group" aria-label="Tipo de ejemplo">
@@ -182,6 +201,7 @@ function App() {
           <p className="eyebrow">Empieza en minutos</p>
           <h2 id="install-title">Instálala y úsala en tu proyecto.</h2>
           <p>Disponible en npm como <code>@isai_dev/data_table_lib</code>. Añade los componentes y estilos a tu aplicación con React 18 o 19.</p>
+          <p>La demo de fotos muestra una vista previa de v2; esa función aún no está en la versión estable de npm.</p>
           <a href={`${repository}#instalar-y-ejecutar`} target="_blank" rel="noreferrer">Leer la documentación completa</a>
         </div>
         <div className="terminal">
