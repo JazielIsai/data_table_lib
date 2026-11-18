@@ -6,7 +6,7 @@ Creada por [Jaziel Isaí](https://isai-dev.com).
 
 Licencia [MIT](./LICENSE). Puedes usar, modificar y distribuir la librería conservando el aviso de copyright y la licencia.
 
-> Esta rama contiene una vista previa de la versión 2. Las funciones de fotos y nuevos iconos todavía no forman parte de la versión estable publicada en npm.
+> Este repositorio incluye una vista previa de la versión 2. Las funciones de fotos y nuevos iconos todavía no forman parte de la versión estable publicada en npm.
 
 ## Instalar y ejecutar
 

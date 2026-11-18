@@ -201,6 +201,7 @@ function App() {
           <p className="eyebrow">Empieza en minutos</p>
           <h2 id="install-title">Instálala y úsala en tu proyecto.</h2>
           <p>Disponible en npm como <code>@isai_dev/data_table_lib</code>. Añade los componentes y estilos a tu aplicación con React 18 o 19.</p>
+          <p>La demo de fotos muestra una vista previa de v2; esa función aún no está en la versión estable de npm.</p>
           <a href={`${repository}#instalar-y-ejecutar`} target="_blank" rel="noreferrer">Leer la documentación completa</a>
         </div>
         <div className="terminal">
