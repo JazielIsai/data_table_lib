@@ -7,7 +7,7 @@ La página del proyecto, un Release de GitHub y un paquete instalable son public
 | GitHub Pages | Sitio con documentación y ejemplos interactivos | Publicado en <https://jazielisai.github.io/data_table_lib/> |
 | GitHub Releases | Una versión identificada por un tag, notas y archivos descargables | `v0.1.0` y `v0.1.1` publicados |
 | GitHub Packages | Un paquete en el registro npm de GitHub | No se publica al crear un release |
-| npmjs.com | Paquete que se instala con `npm install` | `@isai_dev/data_table_lib@0.1.1` publicado; `0.1.2` preparado con licencia MIT |
+| npmjs.com | Paquete que se instala con `npm install` | `@isai_dev/data_table_lib@0.1.1` publicado; `0.1.2` preparado en `main`; `2.0.0-alpha.0` en esta rama de desarrollo |
 
 ## Sitio
 
@@ -27,6 +27,6 @@ Para versiones posteriores, incrementa `version` en `package.json` (por ejemplo,
 
 **GitHub Packages** es un registro de paquetes distinto de Releases y de npmjs.com. El paquete actual está preparado para **npmjs.com** bajo el ámbito de la cuenta npm `@isai_dev`. Para publicarlo también en GitHub Packages habría que usar un ámbito de GitHub (por ejemplo, `@jazielisai`), configurar `https://npm.pkg.github.com` y publicar ese paquete por separado; no cambies el registro de este paquete por accidente.
 
-Para publicar **la versión `0.1.2` con licencia MIT** en npmjs.com, comprueba `npm whoami`, ejecuta `npm pack --dry-run` y después `npm publish --access public`. La cuenta npm debe tener autenticación de dos factores para publicar. Una combinación de nombre y versión ya publicada no puede publicarse otra vez. Para futuras versiones, actualiza `version` en `package.json` y `package-lock.json` antes de publicar.
+Para publicar **la versión `0.1.2` con licencia MIT**, primero cambia a la rama `main`: esta rama contiene `2.0.0-alpha.0` y está en desarrollo. Comprueba `npm whoami`, ejecuta `npm pack --dry-run` y después `npm publish --access public`. La cuenta npm debe tener autenticación de dos factores para publicar. Una combinación de nombre y versión ya publicada no puede publicarse otra vez. Para futuras versiones, actualiza `version` en `package.json` y `package-lock.json` antes de publicar. Esta vista previa v2 usa el tag npm `next` si se publica más adelante, para no sustituir la versión estable `latest`.
 
 El campo `author` de `package.json` y la firma en el sitio identifican al autor, [Jaziel Isaí](https://isai-dev.com). No se añade ningún coautor a los commits.

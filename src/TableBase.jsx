@@ -1,5 +1,7 @@
 import { useId, useMemo, useState } from 'react';
 import { filterRows, paginateRows, sortRows } from './rowModel.js';
+import { ActionIcon, isActionIconName } from './ActionIcon.jsx';
+import { ImageCell } from './ImageCell.jsx';
 
 const defaultId = (row, index) => row?.id ?? index;
 const initialPage = { pageIndex: 0, pageSize: 10 };
@@ -10,9 +12,28 @@ function SelectionHeader({ checked, mixed, onChange, label }) {
     ref={(node) => { if (node) node.indeterminate = mixed; }} />;
 }
 
-function cellContent({ row, column, rowIndex, editable, saveMode, onEdit, error, errorId, disabled, fileVersion, selectOptionLabel }) {
+function ActionButton({ action, onClick, disabled }) {
+  const icon = action.icon ?? (isActionIconName(action.iconName)
+    ? <ActionIcon name={action.iconName} /> : null);
+  const accessibleName = action.ariaLabel ?? (typeof action.label === 'string' ? action.label : undefined);
+  const iconOnly = Boolean(icon && accessibleName && (action.iconOnly || action.label == null));
+  const variant = ['primary', 'danger'].includes(action.variant) ? action.variant : 'default';
+
+  return <button type="button"
+    className={`dt-button dt-action-button dt-action-${variant} ${iconOnly ? 'dt-icon-only' : ''} ${action.className ?? ''}`.trim()}
+    style={action.style} disabled={disabled || action.disabled}
+    aria-label={accessibleName} title={iconOnly ? accessibleName : undefined}
+    onClick={onClick}>
+    {icon && action.iconPosition !== 'end' && <span className="dt-action-symbol">{icon}</span>}
+    {action.label != null && <span className={iconOnly ? 'dt-visually-hidden' : 'dt-action-label'}>{action.label}</span>}
+    {icon && action.iconPosition === 'end' && <span className="dt-action-symbol">{icon}</span>}
+  </button>;
+}
+
+function cellContent({ row, column, rowIndex, imageView, editable, saveMode, onEdit, error, errorId, disabled, fileVersion, selectOptionLabel }) {
   const value = row?.[column.field];
   if (typeof column.renderCell === 'function') return column.renderCell(value, row, rowIndex);
+  if (column.type === 'image') return <ImageCell value={value} row={row} column={column} view={imageView} />;
   if (!editable) return value ?? null;
 
   const common = {
@@ -25,11 +46,8 @@ function cellContent({ row, column, rowIndex, editable, saveMode, onEdit, error,
   };
 
   if (column.type === 'button') {
-    return <button type="button" className="dt-button" style={column.style}
-      aria-label={column.ariaLabel ?? (typeof column.label === 'string' ? column.label : undefined)}
-      disabled={disabled} onClick={(event) => column.onClick?.(event, row)}>
-      {column.label} {column.icon}
-    </button>;
+    return <ActionButton action={column} disabled={disabled}
+      onClick={(event) => column.onClick?.(event, row)} />;
   }
   if (column.type === 'select') {
     return <select {...common} className="dt-control" value={value ?? ''}
@@ -59,6 +77,8 @@ export function DataTable({
   paginationEnabled = false, pagination: controlledPagination, onPaginationChange,
   manualSorting = false, manualFiltering = false, manualPagination = false, rowCount,
   selectable = false, selectedRowIds: controlledSelected, onSelectionChange,
+  defaultImageView = 'thumbnail', imageView: controlledImageView,
+  onImageViewChange, allowImageViewChange = false,
   loading = false, error, loadingMessage = 'Cargando…',
   editMode = 'immediate', onSave, onCancel,
   previousLabel = 'Anterior', nextLabel = 'Siguiente',
@@ -72,6 +92,11 @@ export function DataTable({
     selectRow: (id) => `Seleccionar fila ${id}`,
     rowsPerPage: 'Filas por página',
     selectOption: 'Selecciona una opción',
+    imageView: 'Vista de fotos',
+    imageAvatar: 'Avatares',
+    imageThumbnail: 'Miniaturas',
+    imageLarge: 'Grandes',
+    imageHidden: 'Ocultar fotos',
     ...labels
   };
   const [localSort, setLocalSort] = useState(null);
@@ -79,6 +104,7 @@ export function DataTable({
   const [localFilters, setLocalFilters] = useState({});
   const [localPagination, setLocalPagination] = useState(initialPage);
   const [localSelected, setLocalSelected] = useState([]);
+  const [localImageView, setLocalImageView] = useState(defaultImageView);
   const [drafts, setDrafts] = useState({});
   const [validation, setValidation] = useState({});
   const [saving, setSaving] = useState({});
@@ -91,11 +117,15 @@ export function DataTable({
   const filters = controlledFilters !== undefined ? controlledFilters : localFilters;
   const pagination = controlledPagination ?? localPagination;
   const selected = controlledSelected !== undefined ? controlledSelected : localSelected;
+  const imageView = controlledImageView ?? localImageView;
   const saveMode = editable && editMode === 'save';
-  const visibleColumns = columns.filter((column) => !column.hidden);
+  const hasImageColumns = columns.some((column) => column.type === 'image' && !column.hidden);
+  const visibleColumns = columns.filter((column) => !column.hidden
+    && !(column.type === 'image' && imageView === 'hidden'));
   const actionItems = Array.isArray(actions) ? actions : [];
   const hasActions = actionItems.length > 0 || saveMode;
   const showSearch = searchable || controlledSearch !== undefined;
+  const showImageViewControl = allowImageViewChange && hasImageColumns;
   const showPagination = paginationEnabled || controlledPagination !== undefined;
   const colSpan = visibleColumns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0);
 
@@ -143,6 +173,10 @@ export function DataTable({
     if (controlledSelected === undefined) setLocalSelected(ids);
     onSelectionChange?.(ids, rows.filter((row, index) =>
       ids.some((id) => String(id) === String(getRowId(row, index)))));
+  };
+  const changeImageView = (next) => {
+    if (controlledImageView === undefined) setLocalImageView(next);
+    onImageViewChange?.(next);
   };
   const togglePage = () => {
     const allSelected = pageIds.length > 0 && selectedPageCount === pageIds.length;
@@ -202,12 +236,22 @@ export function DataTable({
 
   return (
     <div className={`dt-container ${className}`.trim()}>
-      {showSearch && <div className="dt-toolbar">
-        <label className="dt-search-label">
+      {(showSearch || showImageViewControl) && <div className="dt-toolbar">
+        {showSearch && <label className="dt-search-label">
           <span className="dt-visually-hidden">{words.search}</span>
           <input className="dt-control dt-search" type="search" value={search ?? ''}
             placeholder={searchPlaceholder} onChange={(event) => changeSearch(event.target.value)} />
-        </label>
+        </label>}
+        {showImageViewControl && <label className="dt-image-view-label">{words.imageView}
+          <select className="dt-control" value={imageView}
+            disabled={controlledImageView !== undefined && !onImageViewChange}
+            onChange={(event) => changeImageView(event.target.value)}>
+            <option value="avatar">{words.imageAvatar}</option>
+            <option value="thumbnail">{words.imageThumbnail}</option>
+            <option value="large">{words.imageLarge}</option>
+            <option value="hidden">{words.imageHidden}</option>
+          </select>
+        </label>}
       </div>}
       {error && <div className="dt-message dt-error" role="alert">{error}</div>}
       <div className="dt-scroll">
@@ -270,7 +314,7 @@ export function DataTable({
                     const fieldError = validation[key]?.[column.field];
                     const errorId = `${errorPrefix}-${key}-${column.field}`;
                     return <td key={column.field} data-label={column.headerName ?? column.field}>
-                      {cellContent({ row, column, rowIndex, editable, saveMode, error: fieldError,
+                      {cellContent({ row, column, rowIndex, imageView, editable, saveMode, error: fieldError,
                         errorId, disabled, fileVersion: fileVersions[key] ?? 0,
                         selectOptionLabel: words.selectOption,
                         onEdit: (event) => updateEdit(event, originalRow, column, id) })}
@@ -279,22 +323,20 @@ export function DataTable({
                   })}
                   {hasActions && <td data-label={actionsHeader}>
                     <div className="dt-actions">
-                      {actionItems.map((action, index) => <button key={action.id ?? index}
-                        type="button" className={`dt-button ${action.className ?? ''}`.trim()}
-                        style={action.style} disabled={disabled || action.disabled}
-                        aria-label={action.ariaLabel ?? (typeof action.label === 'string' ? action.label : undefined)}
+                      {actionItems.map((action, index) => <ActionButton key={action.id ?? index}
+                        action={action} disabled={disabled}
                         onClick={(event) => legacyEditActions
                           ? action.onClick?.(event, originalRow)
-                          : action.onClick?.(originalRow, event)}>
-                        {action.label} {action.icon}
-                      </button>)}
+                          : action.onClick?.(originalRow, event)} />)}
                       {saveMode && drafts[key] && <>
                         <button type="button" className="dt-button dt-primary"
                           disabled={disabled || !onSave} onClick={() => saveRow(id, originalRow)}>
+                          <ActionIcon name="check" />
                           {disabled ? loadingMessage : saveLabel}
                         </button>
                         <button type="button" className="dt-button" disabled={disabled}
                           onClick={() => { clearDraft(key); onCancel?.(originalRow); }}>
+                          <ActionIcon name="close" />
                           {cancelLabel}
                         </button>
                       </>}

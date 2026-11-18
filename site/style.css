@@ -112,7 +112,8 @@ footer .footer-repository { margin-left: auto; }
   .feature-grid { grid-template-columns: 1fr; }
   .feature-grid article { min-height: auto; }
   .demo-switcher { display: flex; width: 100%; }
-  .demo-switcher button { flex: 1; padding-inline: 5px; font-size: .8rem; }
+  .demo-switcher { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .demo-switcher button { padding-inline: 5px; font-size: .8rem; }
   .demo-live { padding: 16px; }
   .install-section { grid-template-columns: 1fr; padding-block: 65px 80px; }
   footer .footer-repository { margin-left: 0; }

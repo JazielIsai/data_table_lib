@@ -1,6 +1,9 @@
 import type { CSSProperties, ReactNode, ChangeEvent, MouseEvent } from 'react';
 
 export type TableRow = object;
+export type TableImageView = 'avatar' | 'thumbnail' | 'large' | 'hidden';
+export type TableActionIconName = 'view' | 'edit' | 'delete' | 'download' | 'more' | 'check' | 'close';
+export interface TableImageValue { src: string; alt?: string }
 export interface TableOption { value: string | number; label: ReactNode }
 export interface TableColumn<Row extends TableRow = TableRow> {
   field: string;
@@ -9,13 +12,21 @@ export interface TableColumn<Row extends TableRow = TableRow> {
   sortable?: boolean;
   filterable?: boolean;
   searchable?: boolean;
-  type?: 'text' | 'date' | 'number' | 'file' | 'select' | 'button';
+  type?: 'text' | 'date' | 'number' | 'file' | 'select' | 'button' | 'image';
   options?: TableOption[];
   placeholder?: string;
   label?: ReactNode;
   ariaLabel?: string;
   icon?: ReactNode;
+  iconName?: TableActionIconName;
+  iconOnly?: boolean;
+  iconPosition?: 'start' | 'end';
+  variant?: 'default' | 'primary' | 'danger';
   style?: CSSProperties;
+  imageAlt?: string | ((value: unknown, row: Row) => string);
+  imageFit?: 'cover' | 'contain';
+  imagePosition?: CSSProperties['objectPosition'];
+  imageFallback?: ReactNode;
   renderCell?: (value: unknown, row: Row, rowIndex: number) => ReactNode;
   sortFn?: (left: unknown, right: unknown, leftRow: Row, rightRow: Row) => number;
   filterFn?: (value: unknown, filter: string, row: Row) => boolean;
@@ -27,6 +38,10 @@ export interface TableAction<Row extends TableRow = TableRow> {
   id?: string | number;
   label?: ReactNode;
   icon?: ReactNode;
+  iconName?: TableActionIconName;
+  iconOnly?: boolean;
+  iconPosition?: 'start' | 'end';
+  variant?: 'default' | 'primary' | 'danger';
   ariaLabel?: string;
   className?: string;
   style?: CSSProperties;
@@ -47,6 +62,11 @@ export interface TableLabels {
   selectRow?: (id: string | number) => string;
   rowsPerPage?: string;
   selectOption?: string;
+  imageView?: string;
+  imageAvatar?: string;
+  imageThumbnail?: string;
+  imageLarge?: string;
+  imageHidden?: string;
 }
 interface BaseProps<Row extends TableRow> {
   columns?: TableColumn<Row>[];
@@ -76,6 +96,10 @@ interface BaseProps<Row extends TableRow> {
   selectable?: boolean;
   selectedRowIds?: Array<string | number>;
   onSelectionChange?: (ids: Array<string | number>, loadedRows: Row[]) => void;
+  defaultImageView?: TableImageView;
+  imageView?: TableImageView;
+  onImageViewChange?: (view: TableImageView) => void;
+  allowImageViewChange?: boolean;
   loading?: boolean;
   error?: ReactNode;
   loadingMessage?: ReactNode;
