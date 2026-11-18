@@ -2,6 +2,15 @@
   "name": "data_table_lib",
   "version": "0.1.0",
   "description": "Accessible React tables with editable cells and row actions",
+  "author": {
+    "name": "Jaziel Isaí",
+    "url": "https://isai-dev.com"
+  },
+  "homepage": "https://jazielisai.github.io/data_table_lib/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JazielIsai/data_table_lib.git"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

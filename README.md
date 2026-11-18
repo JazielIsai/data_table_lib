@@ -2,6 +2,8 @@
 
 Tablas React para mostrar, explorar, seleccionar y editar datos. Incluye `Table` y `TableEdit`, CSS independiente, tipos TypeScript y una demo.
 
+Creada por [Jaziel Isaí](https://isai-dev.com).
+
 ## Instalar y ejecutar
 
 Requiere React y React DOM 18 o 19 en la aplicación. Para desarrollar o compilar este repositorio se recomienda Node.js 22.12+ (también 24 o 26 LTS); [Vite 8 admite Node 20.19+ o 22.12+](https://vite.dev/guide/). El paquete aún no está publicado: genera un archivo instalable desde este repositorio.
@@ -27,6 +29,8 @@ import 'data_table_lib/style.css';
 ## Página de presentación
 
 `npm run site` abre la página de presentación local. `npm run build:site` genera el sitio estático en `site-dist/`, separado de `dist/` para no incluirlo en el paquete npm. El workflow [Publish site](./.github/workflows/pages.yml) publica esa salida en GitHub Pages al cambiar el sitio o la librería en `main`. La configuración de Pages del repositorio debe usar **GitHub Actions** como fuente de publicación.
+
+Consulta la [guía de publicación](./docs/PUBLICACION.md) para activar Pages y entender la diferencia entre Releases, GitHub Packages y npmjs.com.
 
 ## Tabla con datos locales
 

@@ -194,7 +194,11 @@ npm run site`}</code></pre>
         </div>
       </section>
     </main>
-    <footer><span>Data Table Lib</span><span>Tablas React para datos que cambian.</span><a href={repository} target="_blank" rel="noreferrer">Código en GitHub</a></footer>
+    <footer>
+      <span>Data Table Lib</span>
+      <span>Creada por <a href="https://isai-dev.com" target="_blank" rel="noreferrer">Jaziel Isaí · isai-dev.com</a></span>
+      <a className="footer-repository" href={repository} target="_blank" rel="noreferrer">Código en GitHub</a>
+    </footer>
   </>;
 }
 

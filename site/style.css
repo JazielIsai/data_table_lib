@@ -90,7 +90,8 @@ pre { overflow-x: auto; margin: 0; padding: 21px 18px; font: 500 .86rem/1.7 ui-m
 .terminal p code { color: #eaf2ff; }
 footer { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 28px 0 40px; border-top: 1px solid #e2e7ef; color: #68778c; font-size: .85rem; }
 footer span:first-child { color: #172235; font-weight: 750; }
-footer a { margin-left: auto; color: #245de3; font-weight: 700; }
+footer a { color: #245de3; font-weight: 700; }
+footer .footer-repository { margin-left: auto; }
 @media (max-width: 1000px) {
   .hero { grid-template-columns: 1fr; padding-block: 65px 85px; }
   .hero-preview { max-width: 690px; transform: none; }
@@ -114,7 +115,7 @@ footer a { margin-left: auto; color: #245de3; font-weight: 700; }
   .demo-switcher button { flex: 1; padding-inline: 5px; font-size: .8rem; }
   .demo-live { padding: 16px; }
   .install-section { grid-template-columns: 1fr; padding-block: 65px 80px; }
-  footer a { margin-left: 0; }
+  footer .footer-repository { margin-left: 0; }
 }
 @media (prefers-color-scheme: dark) {
   :root { color: #edf2fb; background: #0d1422; }
