@@ -5,8 +5,9 @@ La página del proyecto, un Release de GitHub y un paquete instalable son public
 | Destino | Qué ofrece | Estado inicial |
 | --- | --- | --- |
 | GitHub Pages | Sitio con documentación y ejemplos interactivos | Publicado en <https://jazielisai.github.io/data_table_lib/> |
-| GitHub Releases | Una versión identificada por un tag, notas y archivos descargables | `v0.1.0` publicado |
+| GitHub Releases | Una versión identificada por un tag, notas y archivos descargables | `v0.1.0` y `v0.1.1` publicados |
 | GitHub Packages | Un paquete en el registro npm de GitHub | No se publica al crear un release |
+| npmjs.com | Paquete que se instala con `npm install` | `@isai_dev/data_table_lib@0.1.1` publicado |
 
 ## Sitio
 
@@ -14,7 +15,7 @@ El workflow `.github/workflows/pages.yml` compila `site/`. En **Settings → Pag
 
 ## Releases
 
-El primer release `v0.1.0` ya está publicado. La primera publicación en npm usa `@isai_dev/data_table_lib@0.1.1` porque npm rechazó el nombre anterior sin ámbito. Tras publicar el paquete, crea un release `v0.1.1` desde el commit que contiene el nuevo nombre, con notas que expliquen el cambio de instalación e importación.
+El primer release `v0.1.0` conserva el nombre anterior. La primera publicación en npm y el release `v0.1.1` usan `@isai_dev/data_table_lib` porque npm rechazó el nombre sin ámbito. Para instalar la versión pública usa `npm install @isai_dev/data_table_lib`.
 
 Antes de publicar una nueva versión, ejecuta `npm test`, `npm run build:site` y `npm pack --dry-run`. Confirma que la versión de `package.json` coincide con el tag del nuevo release.
 
@@ -26,6 +27,6 @@ Para versiones posteriores, incrementa `version` en `package.json` (por ejemplo,
 
 **GitHub Packages** es un registro de paquetes distinto de Releases y de npmjs.com. El paquete actual está preparado para **npmjs.com** bajo el ámbito de la cuenta npm `@isai_dev`. Para publicarlo también en GitHub Packages habría que usar un ámbito de GitHub (por ejemplo, `@jazielisai`), configurar `https://npm.pkg.github.com` y publicar ese paquete por separado; no cambies el registro de este paquete por accidente.
 
-Para publicar en **npmjs.com**, inicia sesión con `npm login`, comprueba `npm whoami`, ejecuta `npm pack --dry-run` y después `npm publish --access public`. La cuenta npm debe tener autenticación de dos factores para publicar. El nombre `@isai_dev/data_table_lib` se utiliza en todos los ejemplos, los tipos y la página. Decide una licencia para aclarar los permisos de reutilización del código.
+Para publicar **una versión futura** en npmjs.com, actualiza `version` en `package.json` y `package-lock.json`, inicia sesión con `npm login`, comprueba `npm whoami`, ejecuta `npm pack --dry-run` y después `npm publish --access public`. La cuenta npm debe tener autenticación de dos factores para publicar. Una combinación de nombre y versión ya publicada no puede publicarse otra vez. Decide una licencia para aclarar los permisos de reutilización del código.
 
 El campo `author` de `package.json` y la firma en el sitio identifican al autor, [Jaziel Isaí](https://isai-dev.com). No se añade ningún coautor a los commits.

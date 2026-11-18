@@ -180,17 +180,14 @@ function App() {
       <section className="install-section" id="instalacion" aria-labelledby="install-title">
         <div>
           <p className="eyebrow">Empieza en minutos</p>
-          <h2 id="install-title">Explora el código y úsalo en tu proyecto.</h2>
-          <p>La librería aún no está publicada en npm. Puedes probarla desde este repositorio e instalar el paquete generado localmente.</p>
+          <h2 id="install-title">Instálala y úsala en tu proyecto.</h2>
+          <p>Disponible en npm como <code>@isai_dev/data_table_lib</code>. Añade los componentes y estilos a tu aplicación con React 18 o 19.</p>
           <a href={`${repository}#instalar-y-ejecutar`} target="_blank" rel="noreferrer">Leer la documentación completa</a>
         </div>
         <div className="terminal">
-          <div className="terminal-heading"><span>Terminal</span><CopyButton value={`git clone ${repository}.git\ncd data_table_lib\nnpm install\nnpm run site`} /></div>
-          <pre><code>{`git clone ${repository}.git
-cd data_table_lib
-npm install
-npm run site`}</code></pre>
-          <p>Para generar el paquete: <code>npm pack</code></p>
+          <div className="terminal-heading"><span>Terminal</span><CopyButton value="npm install @isai_dev/data_table_lib" /></div>
+          <pre><code>npm install @isai_dev/data_table_lib</code></pre>
+          <p>Importa también <code>@isai_dev/data_table_lib/style.css</code>.</p>
         </div>
       </section>
     </main>

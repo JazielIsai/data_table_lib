@@ -6,7 +6,22 @@ Creada por [Jaziel Isaí](https://isai-dev.com).
 
 ## Instalar y ejecutar
 
-Requiere React y React DOM 18 o 19 en la aplicación. Para desarrollar o compilar este repositorio se recomienda Node.js 22.12+ (también 24 o 26 LTS); [Vite 8 admite Node 20.19+ o 22.12+](https://vite.dev/guide/). El nombre para npm es `@isai_dev/data_table_lib`; hasta su primera publicación puedes generar un archivo instalable desde este repositorio.
+Requiere React y React DOM 18 o 19 en la aplicación. Para desarrollar o compilar este repositorio se recomienda Node.js 22.12+ (también 24 o 26 LTS); [Vite 8 admite Node 20.19+ o 22.12+](https://vite.dev/guide/). La librería está publicada en npm como [`@isai_dev/data_table_lib`](https://www.npmjs.com/package/@isai_dev/data_table_lib).
+
+En tu proyecto:
+
+```bash
+npm install @isai_dev/data_table_lib
+```
+
+Después importa los componentes y el CSS:
+
+```jsx
+import { Table, TableEdit } from '@isai_dev/data_table_lib';
+import '@isai_dev/data_table_lib/style.css';
+```
+
+Para desarrollar este repositorio:
 
 ```bash
 npm install
@@ -15,12 +30,7 @@ npm test                  # compila y ejecuta las pruebas
 npm pack                  # crea el archivo instalable .tgz
 ```
 
-En otro proyecto, instala el archivo generado con `npm install /ruta/al/archivo.tgz`. Cuando el paquete esté publicado en npm, usa `npm install @isai_dev/data_table_lib`. Después carga el CSS:
-
-```jsx
-import { Table, TableEdit } from '@isai_dev/data_table_lib';
-import '@isai_dev/data_table_lib/style.css';
-```
+También puedes instalar el archivo generado con `npm install /ruta/al/archivo.tgz` si necesitas probar una compilación local.
 
 ## Ejemplos ejecutables
 
