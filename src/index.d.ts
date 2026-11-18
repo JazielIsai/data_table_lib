@@ -1,0 +1,103 @@
+import type { CSSProperties, ReactNode, ChangeEvent, MouseEvent } from 'react';
+
+export type TableRow = object;
+export interface TableOption { value: string | number; label: ReactNode }
+export interface TableColumn<Row extends TableRow = TableRow> {
+  field: string;
+  headerName?: string;
+  hidden?: boolean;
+  sortable?: boolean;
+  filterable?: boolean;
+  searchable?: boolean;
+  type?: 'text' | 'date' | 'number' | 'file' | 'select' | 'button';
+  options?: TableOption[];
+  placeholder?: string;
+  label?: ReactNode;
+  ariaLabel?: string;
+  icon?: ReactNode;
+  style?: CSSProperties;
+  renderCell?: (value: unknown, row: Row, rowIndex: number) => ReactNode;
+  sortFn?: (left: unknown, right: unknown, leftRow: Row, rightRow: Row) => number;
+  filterFn?: (value: unknown, filter: string, row: Row) => boolean;
+  validate?: (value: unknown, row: Row) => string | null | undefined;
+  onChange?: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>, row: Row) => void;
+  onClick?: (event: MouseEvent<HTMLButtonElement>, row: Row) => void;
+}
+export interface TableAction<Row extends TableRow = TableRow> {
+  id?: string | number;
+  label?: ReactNode;
+  icon?: ReactNode;
+  ariaLabel?: string;
+  className?: string;
+  style?: CSSProperties;
+  disabled?: boolean;
+  onClick?: (row: Row, event: MouseEvent<HTMLButtonElement>) => void;
+}
+export interface LegacyEditAction<Row extends TableRow = TableRow>
+  extends Omit<TableAction<Row>, 'onClick'> {
+  onClick?: (event: MouseEvent<HTMLButtonElement>, row: Row) => void;
+}
+export interface TableSort { field: string; direction: 'asc' | 'desc' }
+export interface TablePagination { pageIndex: number; pageSize: number }
+export interface TableLabels {
+  search?: string;
+  filter?: (header: string) => string;
+  filterPlaceholder?: string;
+  selectPage?: string;
+  selectRow?: (id: string | number) => string;
+  rowsPerPage?: string;
+  selectOption?: string;
+}
+interface BaseProps<Row extends TableRow> {
+  columns?: TableColumn<Row>[];
+  rows?: Row[];
+  actions?: TableAction<Row>[];
+  caption?: ReactNode;
+  actionsHeader?: ReactNode;
+  getRowId?: (row: Row, index: number) => string | number;
+  emptyMessage?: ReactNode;
+  className?: string;
+  sortable?: boolean;
+  sort?: TableSort | null;
+  onSortChange?: (sort: TableSort) => void;
+  searchable?: boolean;
+  search?: string;
+  onSearchChange?: (search: string) => void;
+  searchPlaceholder?: string;
+  filters?: Record<string, string>;
+  onFiltersChange?: (filters: Record<string, string>) => void;
+  paginationEnabled?: boolean;
+  pagination?: TablePagination;
+  onPaginationChange?: (pagination: TablePagination) => void;
+  manualSorting?: boolean;
+  manualFiltering?: boolean;
+  manualPagination?: boolean;
+  rowCount?: number;
+  selectable?: boolean;
+  selectedRowIds?: Array<string | number>;
+  onSelectionChange?: (ids: Array<string | number>, loadedRows: Row[]) => void;
+  loading?: boolean;
+  error?: ReactNode;
+  loadingMessage?: ReactNode;
+  previousLabel?: string;
+  nextLabel?: string;
+  labels?: TableLabels;
+  getColumns?: TableColumn<Row>[];
+  getRows?: Row[];
+  onCaption?: ReactNode;
+}
+export interface TableProps<Row extends TableRow = TableRow> extends BaseProps<Row> {
+  /** Legacy alias of actions. */
+  getButtons?: TableAction<Row>[];
+}
+export interface TableEditProps<Row extends TableRow = TableRow> extends BaseProps<Row> {
+  editMode?: 'immediate' | 'save';
+  onSave?: (draft: Row, originalRow: Row) => void | Promise<void>;
+  onCancel?: (originalRow: Row) => void;
+  saveLabel?: string;
+  cancelLabel?: string;
+  /** Legacy edit actions receive (event, row). Prefer actions, which receive (row, event). */
+  getButtons?: LegacyEditAction<Row>[];
+}
+export declare function Table<Row extends TableRow = TableRow>(props: TableProps<Row>): ReactNode;
+export declare function TableEdit<Row extends TableRow = TableRow>(props: TableEditProps<Row>): ReactNode;
