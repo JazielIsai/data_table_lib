@@ -24,6 +24,10 @@ import 'data_table_lib/style.css';
 
 `npm run examples` compila la librería y sirve [tres ejemplos independientes](./examples/README.md) en `http://localhost:5173/examples/`: tabla local, edición con validación y consulta simulada del servidor. Cada ejemplo importa las entradas públicas del paquete, igual que una aplicación consumidora.
 
+## Página de presentación
+
+`npm run site` abre la página de presentación local. `npm run build:site` genera el sitio estático en `site-dist/`, separado de `dist/` para no incluirlo en el paquete npm. El workflow [Publish site](./.github/workflows/pages.yml) publica esa salida en GitHub Pages al cambiar el sitio o la librería en `main`. La configuración de Pages del repositorio debe usar **GitHub Actions** como fuente de publicación.
+
 ## Tabla con datos locales
 
 Activa sólo las funciones que necesites. Las operaciones locales se aplican en este orden: **filtrar → ordenar → paginar**.
