@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TableEdit } from 'data_table_lib';
+import { TableEdit } from '@isai_dev/data_table_lib';
 import { initialPeople } from './data.js';
 
 const columns = [

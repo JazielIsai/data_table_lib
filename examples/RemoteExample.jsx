@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table } from 'data_table_lib';
+import { Table } from '@isai_dev/data_table_lib';
 import { initialPeople } from './data.js';
 
 // Simula la respuesta de una API. Reemplaza esta función por fetch('/api/people?...').

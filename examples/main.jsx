@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import BasicExample from './BasicExample.jsx';
 import EditableExample from './EditableExample.jsx';
 import RemoteExample from './RemoteExample.jsx';
-import 'data_table_lib/style.css';
+import '@isai_dev/data_table_lib/style.css';
 import './styles.css';
 
 createRoot(document.getElementById('root')).render(

@@ -1,10 +1,10 @@
 import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Table } from 'data_table_lib';
+import { Table } from '@isai_dev/data_table_lib';
 import BasicExample from '../examples/BasicExample.jsx';
 import EditableExample from '../examples/EditableExample.jsx';
 import RemoteExample from '../examples/RemoteExample.jsx';
-import 'data_table_lib/style.css';
+import '@isai_dev/data_table_lib/style.css';
 import './style.css';
 
 const repository = 'https://github.com/JazielIsai/data_table_lib';
@@ -22,8 +22,8 @@ const demos = [
     title: 'Explora una tabla completa',
     description: 'Prueba la búsqueda, cambia el orden y selecciona filas. Todo ocurre en el navegador.',
     Component: BasicExample,
-    code: `import { Table } from 'data_table_lib';
-import 'data_table_lib/style.css';
+    code: `import { Table } from '@isai_dev/data_table_lib';
+import '@isai_dev/data_table_lib/style.css';
 
 <Table
   columns={columns}
@@ -39,7 +39,7 @@ import 'data_table_lib/style.css';
     title: 'Edita con confianza',
     description: 'Cada fila tiene un borrador. Los cambios se validan antes de guardar.',
     Component: EditableExample,
-    code: `import { TableEdit } from 'data_table_lib';
+    code: `import { TableEdit } from '@isai_dev/data_table_lib';
 
 <TableEdit
   columns={columns}

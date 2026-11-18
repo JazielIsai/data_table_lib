@@ -1,4 +1,4 @@
-import { Table, TableEdit, type TableColumn, type TableSort } from 'data_table_lib';
+import { Table, TableEdit, type TableColumn, type TableSort } from '@isai_dev/data_table_lib';
 
 interface Person { id: number; name: string; role: string }
 const people: Person[] = [{ id: 1, name: 'Ana', role: 'admin' }];

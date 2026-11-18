@@ -7,7 +7,7 @@ npm install
 npm run examples
 ```
 
-Abre [http://localhost:5173/examples/](http://localhost:5173/examples/). El script compila la librería antes de iniciar Vite; los ejemplos importan `data_table_lib` y `data_table_lib/style.css` mediante las entradas públicas del paquete.
+Abre [http://localhost:5173/examples/](http://localhost:5173/examples/). El script compila la librería antes de iniciar Vite; los ejemplos importan `@isai_dev/data_table_lib` y `@isai_dev/data_table_lib/style.css` mediante las entradas públicas del paquete.
 
 | Archivo | Muestra |
 | --- | --- |
