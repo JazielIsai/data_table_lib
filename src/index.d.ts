@@ -2,6 +2,12 @@ import type { CSSProperties, ReactNode, ChangeEvent, MouseEvent } from 'react';
 
 export type TableRow = object;
 export type TableImageView = 'avatar' | 'thumbnail' | 'large' | 'hidden';
+export type TableLayout = 'table' | 'gallery';
+export interface TableGalleryOptions {
+  imageField?: string;
+  titleField?: string;
+  descriptionField?: string;
+}
 export type TableActionIconName = 'view' | 'edit' | 'delete' | 'download' | 'more' | 'check' | 'close';
 export interface TableImageValue { src: string; alt?: string }
 export interface TableOption { value: string | number; label: ReactNode }
@@ -80,6 +86,10 @@ export interface TableLabels {
   resetColumns?: string;
   moveColumnUp?: (header: string) => string;
   moveColumnDown?: (header: string) => string;
+  layout?: string;
+  layoutTable?: string;
+  layoutGallery?: string;
+  gallery?: string;
 }
 interface BaseProps<Row extends TableRow> {
   columns?: TableColumn<Row>[];
@@ -133,6 +143,12 @@ interface BaseProps<Row extends TableRow> {
   onCaption?: ReactNode;
 }
 export interface TableProps<Row extends TableRow = TableRow> extends BaseProps<Row> {
+  /** The gallery is available when an image column exists. */
+  defaultLayout?: TableLayout;
+  layout?: TableLayout;
+  onLayoutChange?: (layout: TableLayout) => void;
+  allowLayoutChange?: boolean;
+  gallery?: TableGalleryOptions;
   /** Legacy alias of actions. */
   getButtons?: TableAction<Row>[];
 }

@@ -18,6 +18,9 @@ export const examples = <>
   <Table columns={columns} rows={people} sortable searchable paginationEnabled
     sort={sort} onSortChange={(next) => { next.direction; }}
     defaultImageView="avatar" allowImageViewChange
+    defaultLayout="gallery" allowLayoutChange
+    gallery={{ imageField: 'photo', titleField: 'name', descriptionField: 'role' }}
+    onLayoutChange={(layout) => { const view: 'table' | 'gallery' = layout; void view; }}
     allowColumnCustomization columnPreferencesKey="people-table"
     defaultColumnOrder={['name', 'photo', 'role']}
     defaultColumnVisibility={{ role: false }}

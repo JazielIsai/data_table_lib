@@ -40,7 +40,7 @@ También puedes instalar el archivo generado con `npm install /ruta/al/archivo.t
 
 `npm run examples` compila la librería y sirve [cuatro ejemplos independientes](./examples/README.md) en `http://localhost:5173/examples/`: tabla local, edición con validación, consulta simulada del servidor y fotos con acciones. Cada ejemplo importa las entradas públicas del paquete, igual que una aplicación consumidora.
 
-## Fotos y acciones (vista previa de la versión 2)
+## Fotos, galería y acciones (vista previa de la versión 2)
 
 Usa `type: 'image'` para mostrar una URL o un objeto `{ src, alt }` en una columna. El desarrollador puede elegir la vista inicial: `avatar`, `thumbnail`, `large` o `hidden`. Con `allowImageViewChange`, quien usa la tabla puede cambiarla desde un selector. `imageView` y `onImageViewChange` permiten controlar la elección desde la aplicación; `defaultImageView` inicia el estado interno cuando no está controlado.
 
@@ -55,6 +55,8 @@ const rows = [{ id: 1, name: 'Ana', photo: {
   src: '/photos/ana.jpg', alt: 'Retrato de Ana' } }];
 
 <Table columns={columns} rows={rows}
+  defaultLayout="gallery" allowLayoutChange
+  gallery={{ imageField: 'photo', titleField: 'name' }}
   imageView={imageView} onImageViewChange={setImageView}
   allowImageViewChange
   allowColumnCustomization columnPreferencesKey="mi-tabla-personas"
@@ -66,6 +68,8 @@ const rows = [{ id: 1, name: 'Ana', photo: {
 Los valores de imagen sin URL o con error de carga muestran `imageFallback` (por defecto, “Sin foto”). Usa un `alt` descriptivo para fotos con significado; también puedes definir `imageAlt(value, row)`. `imageFit` acepta `cover` o `contain` e `imagePosition` ajusta el recorte. La búsqueda global omite columnas de imagen por defecto; `searchable: true` permite buscar por el texto alternativo.
 
 `previewable: true` abre la foto en un diálogo modal con botones para recorrer las fotos de la página actual. El diálogo se cierra con su botón o con Escape. Si necesitas tu propio visor, define `onImageClick(value, row)` en la columna; esa función sustituye al diálogo integrado. Sólo se amplían imágenes que tienen URL.
+
+Cuando las imágenes son el contenido principal, `defaultLayout="gallery"` muestra tarjetas con una foto grande y texto breve, siguiendo la [recomendación de Apple para colecciones con muchas imágenes](https://developer.apple.com/design/human-interface-guidelines/lists-and-tables). `allowLayoutChange` añade los botones **Tabla** y **Galería** para quien usa la librería. `layout` / `onLayoutChange` controlan la presentación desde la aplicación. `gallery.imageField` elige la columna de imagen; `titleField` y `descriptionField` eligen el texto de cada tarjeta. Si se omiten, se usa la primera columna de imagen y la primera columna de texto visible. La galería reutiliza búsqueda, paginación, selección, acciones y visor de fotos; el tamaño de avatar o miniatura y la personalización de columnas sólo afectan a la tabla. `TableEdit` sigue usando la tabla para conservar los controles de edición.
 
 `allowColumnCustomization` muestra un panel para ocultar y mover columnas con teclado o ratón. `hideable: false` y `reorderable: false` bloquean esos cambios para una columna; `hidden: true` la oculta siempre. El panel impide ocultar la última columna visible. `columnPreferencesKey` guarda el orden y la visibilidad en `localStorage` del navegador; usa una clave única por tabla. Si no pasas la clave, la elección sólo dura mientras la tabla está montada. La aplicación también puede controlar el estado con `columnOrder` / `onColumnOrderChange` y `columnVisibility` / `onColumnVisibilityChange`; `defaultColumnOrder` y `defaultColumnVisibility` definen los valores iniciales no controlados. Las columnas nuevas se añaden al final del orden guardado. La búsqueda global omite las columnas ocultas por el usuario.
 
@@ -238,6 +242,8 @@ Los tipos de celda son `text`, `date`, `number`, `file`, `select` y `button`. Lo
 | `selectable`, `selectedRowIds`, `onSelectionChange` | `boolean`, IDs, función | Selección opcional/controlada. |
 | `defaultImageView`, `imageView`, `onImageViewChange` | vista, vista, función | Vista de fotos inicial o controlada. |
 | `allowImageViewChange` | `boolean` | Muestra el selector de vista a quien usa la tabla. |
+| `defaultLayout`, `layout`, `onLayoutChange` | `'table' \| 'gallery'`, vista, función | Presentación inicial o controlada de `Table`. |
+| `allowLayoutChange`, `gallery` | `boolean`, objeto | Permite alternar vistas y elige campos de foto, título y descripción. |
 | `allowColumnCustomization` | `boolean` | Muestra el panel para ocultar y mover columnas. |
 | `defaultColumnOrder`, `columnOrder`, `onColumnOrderChange` | `string[]`, `string[]`, función | Orden inicial o controlado de los campos. |
 | `defaultColumnVisibility`, `columnVisibility`, `onColumnVisibilityChange` | objeto, objeto, función | Visibilidad inicial o controlada por campo; `false` oculta. |

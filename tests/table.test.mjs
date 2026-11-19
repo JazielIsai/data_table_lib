@@ -161,6 +161,53 @@ test('photo viewer opens a dialog, moves between images, and custom click overri
   }
 });
 
+test('gallery shares search, pagination, selection and row actions with the table', () => {
+  const rows = Array.from({ length: 12 }, (_, index) => ({
+    id: index + 1, name: `Persona ${index + 1}`, team: 'Diseño',
+    photo: { src: `/photo-${index + 1}.jpg`, alt: `Retrato ${index + 1}` }
+  }));
+  let opened = '';
+  render(React.createElement(Table, {
+    caption: 'Personas', rows,
+    columns: [{ field: 'photo', type: 'image' }, { field: 'name', headerName: 'Nombre' },
+      { field: 'team', headerName: 'Equipo' }],
+    defaultLayout: 'gallery', allowLayoutChange: true,
+    gallery: { imageField: 'photo', titleField: 'name', descriptionField: 'team' },
+    searchable: true, paginationEnabled: true, selectable: true,
+    actions: [{ label: 'Ver', onClick: (row) => { opened = row.name; } }]
+  }));
+  const gallery = screen.getByRole('region', { name: 'Personas' });
+  assert.equal(within(gallery).getAllByRole('article').length, 10);
+  assert.ok(within(gallery).getByRole('heading', { name: 'Persona 1' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+  assert.ok(within(gallery).getByRole('heading', { name: 'Persona 11' }));
+  fireEvent.click(within(gallery).getByRole('checkbox', { name: 'Seleccionar fila 11' }));
+  fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar en la tabla' }),
+    { target: { value: 'Persona 2' } });
+  assert.equal(within(gallery).getAllByRole('article').length, 1);
+  fireEvent.click(within(gallery).getByRole('button', { name: 'Ver' }));
+  assert.equal(opened, 'Persona 2');
+  fireEvent.click(screen.getByRole('button', { name: 'Tabla' }));
+  assert.ok(screen.getByRole('table', { name: 'Personas' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Galería' }));
+  assert.ok(screen.getByRole('region', { name: 'Personas' }));
+});
+
+test('controlled gallery layout reports changes and respects the supplied view', () => {
+  const changes = [];
+  const props = {
+    columns: [{ field: 'photo', type: 'image' }, { field: 'name' }],
+    rows: [{ id: 1, name: 'Ana', photo: '/ana.jpg' }],
+    layout: 'table', onLayoutChange: (value) => changes.push(value), allowLayoutChange: true
+  };
+  const { rerender } = render(React.createElement(Table, props));
+  fireEvent.click(screen.getByRole('button', { name: 'Galería' }));
+  assert.deepEqual(changes, ['gallery']);
+  assert.ok(screen.getByRole('table'));
+  rerender(React.createElement(Table, { ...props, layout: 'gallery' }));
+  assert.ok(screen.getByRole('region', { name: 'Galería de fotos' }));
+});
+
 test('renders headers, data, empty state and legacy props', () => {
   const html = renderToStaticMarkup(React.createElement(Table, {
     getColumns: [{ field: 'name', headerName: 'Name' }, { field: 'secret', hidden: true }],

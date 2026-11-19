@@ -23,8 +23,10 @@ export default function PhotoExample() {
   const [notice, setNotice] = useState('');
 
   return <>
-    <p>Cambia la vista, organiza las columnas y pulsa una foto para ampliarla. Tus columnas se guardan en este navegador.</p>
+    <p>Alterna entre tabla y galería. En la tabla puedes ajustar las columnas; en ambas vistas puedes ampliar las fotos.</p>
     <Table caption="Equipo con fotografías" columns={columns} rows={rows}
+      defaultLayout="gallery" allowLayoutChange
+      gallery={{ imageField: 'photo', titleField: 'name', descriptionField: 'team' }}
       imageView={imageView} onImageViewChange={setImageView} allowImageViewChange
       allowColumnCustomization columnPreferencesKey="dt-demo-photos-v2"
       actions={[

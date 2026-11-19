@@ -1,6 +1,6 @@
 {
   "name": "@isai_dev/data_table_lib",
-  "version": "2.0.0-alpha.1",
+  "version": "2.0.0-alpha.2",
   "description": "Accessible React tables with editable cells and row actions",
   "author": {
     "name": "Jaziel Isaí",
