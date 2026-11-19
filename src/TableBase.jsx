@@ -4,6 +4,7 @@ import { ActionIcon, isActionIconName } from './ActionIcon.jsx';
 import { ImageCell, imageDetails } from './ImageCell.jsx';
 import { ImagePreview } from './ImagePreview.jsx';
 import { ColumnControls } from './ColumnControls.jsx';
+import { GalleryView } from './GalleryView.jsx';
 import { loadColumnPreferences, normalizeColumnOrder, saveColumnPreferences } from './columnState.js';
 
 const defaultId = (row, index) => row?.id ?? index;
@@ -89,6 +90,8 @@ export function DataTable({
   defaultColumnOrder, onColumnOrderChange,
   columnVisibility: controlledColumnVisibility, defaultColumnVisibility,
   onColumnVisibilityChange, columnPreferencesKey,
+  defaultLayout = 'table', layout: controlledLayout, onLayoutChange,
+  allowLayoutChange = false, gallery = {},
   loading = false, error, loadingMessage = 'Cargando…',
   editMode = 'immediate', onSave, onCancel,
   previousLabel = 'Anterior', nextLabel = 'Siguiente',
@@ -116,6 +119,10 @@ export function DataTable({
     resetColumns: 'Restablecer',
     moveColumnUp: (header) => `Mover ${header} a la izquierda`,
     moveColumnDown: (header) => `Mover ${header} a la derecha`,
+    layout: 'Presentación',
+    layoutTable: 'Tabla',
+    layoutGallery: 'Galería',
+    gallery: 'Galería de fotos',
     ...labels
   };
   const [localSort, setLocalSort] = useState(null);
@@ -124,6 +131,7 @@ export function DataTable({
   const [localPagination, setLocalPagination] = useState(initialPage);
   const [localSelected, setLocalSelected] = useState([]);
   const [localImageView, setLocalImageView] = useState(defaultImageView);
+  const [localLayout, setLocalLayout] = useState(defaultLayout);
   const columnDefaults = {
     order: defaultColumnOrder ?? columns.map((column) => column.field),
     visibility: defaultColumnVisibility ?? {}
@@ -150,6 +158,7 @@ export function DataTable({
   const pagination = controlledPagination ?? localPagination;
   const selected = controlledSelected !== undefined ? controlledSelected : localSelected;
   const imageView = controlledImageView ?? localImageView;
+  const requestedLayout = controlledLayout ?? localLayout;
   const columnOrder = normalizeColumnOrder(controlledColumnOrder ?? localColumns.order, columns);
   const columnVisibility = controlledColumnVisibility ?? localColumns.visibility;
   const columnByField = new Map(columns.map((column) => [column.field, column]));
@@ -162,11 +171,20 @@ export function DataTable({
   const visibleColumns = orderedColumns.filter((column) => !column.hidden
     && columnVisibility[column.field] !== false
     && !(column.type === 'image' && imageView === 'hidden'));
+  const galleryImageColumn = columns.find((column) => column.type === 'image'
+    && column.field === gallery.imageField)
+    ?? columns.find((column) => column.type === 'image' && !column.hidden);
+  const layout = !editable && galleryImageColumn && requestedLayout === 'gallery'
+    ? 'gallery' : 'table';
+  const galleryTitleField = gallery.titleField
+    ?? visibleColumns.find((column) => column.type !== 'image')?.field;
+  const galleryDescriptionField = gallery.descriptionField;
   const actionItems = Array.isArray(actions) ? actions : [];
   const hasActions = actionItems.length > 0 || saveMode;
   const showSearch = searchable || controlledSearch !== undefined;
   const showImageViewControl = allowImageViewChange && hasImageColumns;
   const showColumnControl = allowColumnCustomization && customizableColumns.length > 0;
+  const showLayoutControl = !editable && Boolean(galleryImageColumn) && allowLayoutChange;
   const orderReadOnly = controlledColumnOrder !== undefined && !onColumnOrderChange;
   const visibilityReadOnly = controlledColumnVisibility !== undefined && !onColumnVisibilityChange;
   const showPagination = paginationEnabled || controlledPagination !== undefined;
@@ -232,6 +250,14 @@ export function DataTable({
   const changeImageView = (next) => {
     if (controlledImageView === undefined) setLocalImageView(next);
     onImageViewChange?.(next);
+  };
+  const changeLayout = (next) => {
+    if (controlledLayout === undefined) setLocalLayout(next);
+    onLayoutChange?.(next);
+  };
+  const openImage = (value, row, column, id) => {
+    if (column.onImageClick) column.onImageClick(value, row);
+    else setImagePreview({ field: column.field, rowId: id });
   };
   const changeColumnOrder = (next) => {
     if (controlledColumnOrder === undefined) {
@@ -331,13 +357,21 @@ export function DataTable({
 
   return (
     <div className={`dt-container ${className}`.trim()}>
-      {(showSearch || showImageViewControl || showColumnControl) && <div className="dt-toolbar">
+      {(showSearch || showImageViewControl || showColumnControl || showLayoutControl) && <div className="dt-toolbar">
         {showSearch && <label className="dt-search-label">
           <span className="dt-visually-hidden">{words.search}</span>
           <input className="dt-control dt-search" type="search" value={search ?? ''}
             placeholder={searchPlaceholder} onChange={(event) => changeSearch(event.target.value)} />
         </label>}
-        {showImageViewControl && <label className="dt-image-view-label">{words.imageView}
+        {showLayoutControl && <div className="dt-layout-control" role="group" aria-label={words.layout}>
+          <button type="button" className="dt-button" aria-pressed={layout === 'table'}
+            disabled={controlledLayout !== undefined && !onLayoutChange}
+            onClick={() => changeLayout('table')}>{words.layoutTable}</button>
+          <button type="button" className="dt-button" aria-pressed={layout === 'gallery'}
+            disabled={controlledLayout !== undefined && !onLayoutChange}
+            onClick={() => changeLayout('gallery')}>{words.layoutGallery}</button>
+        </div>}
+        {showImageViewControl && layout === 'table' && <label className="dt-image-view-label">{words.imageView}
           <select className="dt-control" value={imageView}
             disabled={controlledImageView !== undefined && !onImageViewChange}
             onChange={(event) => changeImageView(event.target.value)}>
@@ -347,12 +381,29 @@ export function DataTable({
             <option value="hidden">{words.imageHidden}</option>
           </select>
         </label>}
-        {showColumnControl && <ColumnControls columns={customizableColumns}
+        {showColumnControl && layout === 'table' && <ColumnControls columns={customizableColumns}
           visibleFields={preferenceVisibleFields} onMove={moveColumn} onToggle={toggleColumn}
           onReset={resetColumns} orderReadOnly={orderReadOnly}
           visibilityReadOnly={visibilityReadOnly} labels={words} />}
       </div>}
       {error && <div className="dt-message dt-error" role="alert">{error}</div>}
+      {layout === 'gallery' && <GalleryView caption={caption} rows={pageRows}
+        imageColumn={galleryImageColumn} titleField={galleryTitleField}
+        descriptionField={galleryDescriptionField} getRowId={getRowId}
+        selectedSet={selectedSet} selectable={selectable}
+        onSelect={(id) => {
+          const key = String(id);
+          changeSelection(selectedSet.has(key)
+            ? selected.filter((item) => String(item) !== key)
+            : [...selected, id]);
+        }}
+        actions={actionItems}
+        renderAction={(action, row, index) => <ActionButton key={action.id ?? index}
+          action={action} onClick={(event) => action.onClick?.(row, event)} />}
+        onImageOpen={(value, row, id) => openImage(value, row, galleryImageColumn, id)}
+        loading={loading} loadingMessage={loadingMessage} emptyMessage={emptyMessage}
+        labels={words} />}
+      {layout === 'table' &&
       <div className="dt-scroll">
         <table className="dt-table" aria-busy={loading}>
           {caption && <caption>{caption}</caption>}
@@ -415,8 +466,7 @@ export function DataTable({
                     return <td key={column.field} data-label={column.headerName ?? column.field}>
                       {cellContent({ row, column, rowIndex, imageView, imageOpenLabel: words.imageOpen,
                         onImageOpen: (value, currentRow, imageColumn) => {
-                          if (imageColumn.onImageClick) imageColumn.onImageClick(value, currentRow);
-                          else setImagePreview({ field: imageColumn.field, rowId: id });
+                          openImage(value, currentRow, imageColumn, id);
                         }, editable, saveMode, error: fieldError,
                         errorId, disabled, fileVersion: fileVersions[key] ?? 0,
                         selectOptionLabel: words.selectOption,
@@ -450,7 +500,7 @@ export function DataTable({
               })}
           </tbody>
         </table>
-      </div>
+      </div>}
       {showPagination && <div className="dt-pagination">
         <span aria-live="polite">{total === 0 ? '0' : pageIndex * pageSize + 1}–{Math.min((pageIndex + 1) * pageSize, total)} de {total}</span>
         <div className="dt-page-actions">

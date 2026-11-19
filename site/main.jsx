@@ -54,8 +54,8 @@ import '@isai_dev/data_table_lib/style.css';
   {
     id: 'photos',
     label: 'Fotos · v2',
-    title: 'Fotos a tu manera · vista previa v2',
-    description: 'Cambia la vista, reorganiza las columnas y abre las fotos. Las preferencias de columnas se guardan en este navegador.',
+    title: 'Fotos en tabla o galería · vista previa v2',
+    description: 'Elige una galería para explorar imágenes o una tabla para comparar datos. Abre las fotos y ajusta las columnas de la tabla.',
     Component: PhotoExample,
     code: `const columns = [
   { field: 'photo', headerName: 'Foto', type: 'image',
@@ -64,6 +64,9 @@ import '@isai_dev/data_table_lib/style.css';
 ];
 
 <Table columns={columns} rows={people}
+  defaultLayout="gallery" allowLayoutChange
+  gallery={{ imageField: 'photo', titleField: 'name',
+    descriptionField: 'team' }}
   defaultImageView="avatar"
   allowImageViewChange
   allowColumnCustomization
