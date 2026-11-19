@@ -48,8 +48,8 @@ Usa `type: 'image'` para mostrar una URL o un objeto `{ src, alt }` en una colum
 const [imageView, setImageView] = useState('avatar');
 const columns = [
   { field: 'photo', headerName: 'Foto', type: 'image', searchable: false,
-    imageFit: 'cover', imageFallback: 'Sin foto' },
-  { field: 'name', headerName: 'Nombre' }
+    imageFit: 'cover', imageFallback: 'Sin foto', previewable: true },
+  { field: 'name', headerName: 'Nombre', hideable: false }
 ];
 const rows = [{ id: 1, name: 'Ana', photo: {
   src: '/photos/ana.jpg', alt: 'Retrato de Ana' } }];
@@ -57,12 +57,17 @@ const rows = [{ id: 1, name: 'Ana', photo: {
 <Table columns={columns} rows={rows}
   imageView={imageView} onImageViewChange={setImageView}
   allowImageViewChange
+  allowColumnCustomization columnPreferencesKey="mi-tabla-personas"
   actions={[{ label: 'Ver perfil', iconName: 'view', iconOnly: true,
     variant: 'primary', onClick: (row) => openProfile(row) }]}
 />;
 ```
 
 Los valores de imagen sin URL o con error de carga muestran `imageFallback` (por defecto, “Sin foto”). Usa un `alt` descriptivo para fotos con significado; también puedes definir `imageAlt(value, row)`. `imageFit` acepta `cover` o `contain` e `imagePosition` ajusta el recorte. La búsqueda global omite columnas de imagen por defecto; `searchable: true` permite buscar por el texto alternativo.
+
+`previewable: true` abre la foto en un diálogo modal con botones para recorrer las fotos de la página actual. El diálogo se cierra con su botón o con Escape. Si necesitas tu propio visor, define `onImageClick(value, row)` en la columna; esa función sustituye al diálogo integrado. Sólo se amplían imágenes que tienen URL.
+
+`allowColumnCustomization` muestra un panel para ocultar y mover columnas con teclado o ratón. `hideable: false` y `reorderable: false` bloquean esos cambios para una columna; `hidden: true` la oculta siempre. El panel impide ocultar la última columna visible. `columnPreferencesKey` guarda el orden y la visibilidad en `localStorage` del navegador; usa una clave única por tabla. Si no pasas la clave, la elección sólo dura mientras la tabla está montada. La aplicación también puede controlar el estado con `columnOrder` / `onColumnOrderChange` y `columnVisibility` / `onColumnVisibilityChange`; `defaultColumnOrder` y `defaultColumnVisibility` definen los valores iniciales no controlados. Las columnas nuevas se añaden al final del orden guardado. La búsqueda global omite las columnas ocultas por el usuario.
 
 Las acciones admiten `iconName`: `view`, `edit`, `delete`, `download`, `more`, `check` y `close`. También puedes pasar tu propio componente con `icon`. `iconOnly` oculta el texto visualmente, pero conserva el nombre accesible tomado de `label` o `ariaLabel`. `variant` acepta `default`, `primary` o `danger`; `iconPosition` acepta `start` o `end`. Los iconos integrados son SVG y no requieren una dependencia adicional.
 
@@ -233,6 +238,10 @@ Los tipos de celda son `text`, `date`, `number`, `file`, `select` y `button`. Lo
 | `selectable`, `selectedRowIds`, `onSelectionChange` | `boolean`, IDs, función | Selección opcional/controlada. |
 | `defaultImageView`, `imageView`, `onImageViewChange` | vista, vista, función | Vista de fotos inicial o controlada. |
 | `allowImageViewChange` | `boolean` | Muestra el selector de vista a quien usa la tabla. |
+| `allowColumnCustomization` | `boolean` | Muestra el panel para ocultar y mover columnas. |
+| `defaultColumnOrder`, `columnOrder`, `onColumnOrderChange` | `string[]`, `string[]`, función | Orden inicial o controlado de los campos. |
+| `defaultColumnVisibility`, `columnVisibility`, `onColumnVisibilityChange` | objeto, objeto, función | Visibilidad inicial o controlada por campo; `false` oculta. |
+| `columnPreferencesKey` | `string` | Guarda preferencias de columnas en `localStorage`. |
 | `loading`, `error` | `boolean`, `ReactNode` | Estado de carga y aviso de error. |
 | `emptyMessage`, `loadingMessage` | `ReactNode` | Textos de estado. |
 | `className` | `string` | Clase adicional del contenedor. |
@@ -251,7 +260,7 @@ Los tipos de celda son `text`, `date`, `number`, `file`, `select` y `button`. Lo
 }} />
 ```
 
-Cada columna acepta `field`, `headerName`, `hidden`, `sortable`, `filterable`, `searchable`, `sortFn`, `filterFn`, `type`, `options`, `placeholder`, `renderCell`, `validate`, `onChange`, `onClick`, `label`, `icon`, `ariaLabel` y `style`. Para `type: 'image'`, también acepta `imageAlt`, `imageFit`, `imagePosition` e `imageFallback`. Cada acción acepta `id`, `label`, `icon`, `iconName`, `iconOnly`, `iconPosition`, `variant`, `ariaLabel`, `className`, `style`, `disabled` y `onClick`. Si sólo muestra un icono, proporciona un `label` de texto o `ariaLabel`.
+Cada columna acepta `field`, `headerName`, `hidden`, `hideable`, `reorderable`, `sortable`, `filterable`, `searchable`, `sortFn`, `filterFn`, `type`, `options`, `placeholder`, `renderCell`, `validate`, `onChange`, `onClick`, `label`, `icon`, `ariaLabel` y `style`. Para `type: 'image'`, también acepta `imageAlt`, `imageFit`, `imagePosition`, `imageFallback`, `previewable` y `onImageClick`. Cada acción acepta `id`, `label`, `icon`, `iconName`, `iconOnly`, `iconPosition`, `variant`, `ariaLabel`, `className`, `style`, `disabled` y `onClick`. Si sólo muestra un icono, proporciona un `label` de texto o `ariaLabel`.
 
 Los nombres anteriores `getColumns`, `getRows`, `getButtons` y `onCaption` siguen disponibles. En `TableEdit`, `getButtons` conserva `onClick(event, row)`; el prop nuevo `actions` usa `onClick(row, event)`. Si pasas ambas versiones, prevalece el nombre nuevo.
 

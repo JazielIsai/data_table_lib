@@ -14,7 +14,7 @@ Abre [http://localhost:5173/examples/](http://localhost:5173/examples/). El scri
 | [BasicExample.jsx](./BasicExample.jsx) | Búsqueda, filtro, ordenamiento, selección, paginación y acciones con datos locales. |
 | [EditableExample.jsx](./EditableExample.jsx) | Borradores por fila, validación, guardar y cancelar. |
 | [RemoteExample.jsx](./RemoteExample.jsx) | Estado controlado y operaciones delegadas a una consulta simulada. |
-| [PhotoExample.jsx](./PhotoExample.jsx) | Fotos en cuatro vistas, elección del usuario e iconos de acciones accesibles. |
+| [PhotoExample.jsx](./PhotoExample.jsx) | Fotos en cuatro vistas, visor ampliado, columnas personalizables e iconos accesibles. |
 
 La consulta de `RemoteExample.jsx` usa datos locales y una breve espera para que puedas ejecutarla sin servidor. En una aplicación real, reemplaza `loadPeople` por una petición a tu API que devuelva `{ rows, total }`; conserva `manualSorting`, `manualFiltering`, `manualPagination` y los callbacks de estado. El [README principal](../README.md#datos-del-servidor) incluye un ejemplo con `fetch` y cancelación de peticiones.
 

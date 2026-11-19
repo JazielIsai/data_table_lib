@@ -9,6 +9,8 @@ export interface TableColumn<Row extends TableRow = TableRow> {
   field: string;
   headerName?: string;
   hidden?: boolean;
+  hideable?: boolean;
+  reorderable?: boolean;
   sortable?: boolean;
   filterable?: boolean;
   searchable?: boolean;
@@ -27,6 +29,8 @@ export interface TableColumn<Row extends TableRow = TableRow> {
   imageFit?: 'cover' | 'contain';
   imagePosition?: CSSProperties['objectPosition'];
   imageFallback?: ReactNode;
+  previewable?: boolean;
+  onImageClick?: (value: TableImageValue | string | null | undefined, row: Row) => void;
   renderCell?: (value: unknown, row: Row, rowIndex: number) => ReactNode;
   sortFn?: (left: unknown, right: unknown, leftRow: Row, rightRow: Row) => number;
   filterFn?: (value: unknown, filter: string, row: Row) => boolean;
@@ -67,6 +71,15 @@ export interface TableLabels {
   imageThumbnail?: string;
   imageLarge?: string;
   imageHidden?: string;
+  imageOpen?: (alt: string) => string;
+  imagePreview?: string;
+  imagePrevious?: string;
+  imageNext?: string;
+  imageClose?: string;
+  columns?: string;
+  resetColumns?: string;
+  moveColumnUp?: (header: string) => string;
+  moveColumnDown?: (header: string) => string;
 }
 interface BaseProps<Row extends TableRow> {
   columns?: TableColumn<Row>[];
@@ -100,6 +113,15 @@ interface BaseProps<Row extends TableRow> {
   imageView?: TableImageView;
   onImageViewChange?: (view: TableImageView) => void;
   allowImageViewChange?: boolean;
+  allowColumnCustomization?: boolean;
+  defaultColumnOrder?: string[];
+  columnOrder?: string[];
+  onColumnOrderChange?: (order: string[]) => void;
+  defaultColumnVisibility?: Record<string, boolean>;
+  columnVisibility?: Record<string, boolean>;
+  onColumnVisibilityChange?: (visibility: Record<string, boolean>) => void;
+  /** Optional localStorage key for the table's column order and visibility. */
+  columnPreferencesKey?: string;
   loading?: boolean;
   error?: ReactNode;
   loadingMessage?: ReactNode;

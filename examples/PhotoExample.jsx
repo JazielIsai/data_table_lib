@@ -12,8 +12,8 @@ const people = [
 
 const columns = [
   { field: 'photo', headerName: 'Foto', type: 'image', searchable: false,
-    imageFit: 'cover', imageFallback: 'Sin foto' },
-  { field: 'name', headerName: 'Nombre', sortable: true },
+    imageFit: 'cover', imageFallback: 'Sin foto', previewable: true },
+  { field: 'name', headerName: 'Nombre', sortable: true, hideable: false },
   { field: 'team', headerName: 'Equipo' }
 ];
 
@@ -23,9 +23,10 @@ export default function PhotoExample() {
   const [notice, setNotice] = useState('');
 
   return <>
-    <p>El desarrollador inicia en avatares; cambia la vista en el control de la tabla.</p>
+    <p>Cambia la vista, organiza las columnas y pulsa una foto para ampliarla. Tus columnas se guardan en este navegador.</p>
     <Table caption="Equipo con fotografías" columns={columns} rows={rows}
       imageView={imageView} onImageViewChange={setImageView} allowImageViewChange
+      allowColumnCustomization columnPreferencesKey="dt-demo-photos-v2"
       actions={[
         { id: 'view', label: 'Ver', iconName: 'view', iconOnly: true, variant: 'primary',
           onClick: (row) => setNotice(`${row.name} trabaja en ${row.team}.`) },
