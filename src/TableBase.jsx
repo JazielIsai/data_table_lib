@@ -1,7 +1,10 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { filterRows, paginateRows, sortRows } from './rowModel.js';
 import { ActionIcon, isActionIconName } from './ActionIcon.jsx';
-import { ImageCell } from './ImageCell.jsx';
+import { ImageCell, imageDetails } from './ImageCell.jsx';
+import { ImagePreview } from './ImagePreview.jsx';
+import { ColumnControls } from './ColumnControls.jsx';
+import { loadColumnPreferences, normalizeColumnOrder, saveColumnPreferences } from './columnState.js';
 
 const defaultId = (row, index) => row?.id ?? index;
 const initialPage = { pageIndex: 0, pageSize: 10 };
@@ -30,10 +33,13 @@ function ActionButton({ action, onClick, disabled }) {
   </button>;
 }
 
-function cellContent({ row, column, rowIndex, imageView, editable, saveMode, onEdit, error, errorId, disabled, fileVersion, selectOptionLabel }) {
+function cellContent({ row, column, rowIndex, imageView, imageOpenLabel, onImageOpen,
+  editable, saveMode, onEdit, error, errorId, disabled, fileVersion, selectOptionLabel }) {
   const value = row?.[column.field];
   if (typeof column.renderCell === 'function') return column.renderCell(value, row, rowIndex);
-  if (column.type === 'image') return <ImageCell value={value} row={row} column={column} view={imageView} />;
+  if (column.type === 'image') return <ImageCell value={value} row={row} column={column}
+    view={imageView} openLabel={imageOpenLabel}
+    onOpen={column.previewable || column.onImageClick ? () => onImageOpen(value, row, column) : undefined} />;
   if (!editable) return value ?? null;
 
   const common = {
@@ -79,6 +85,10 @@ export function DataTable({
   selectable = false, selectedRowIds: controlledSelected, onSelectionChange,
   defaultImageView = 'thumbnail', imageView: controlledImageView,
   onImageViewChange, allowImageViewChange = false,
+  allowColumnCustomization = false, columnOrder: controlledColumnOrder,
+  defaultColumnOrder, onColumnOrderChange,
+  columnVisibility: controlledColumnVisibility, defaultColumnVisibility,
+  onColumnVisibilityChange, columnPreferencesKey,
   loading = false, error, loadingMessage = 'Cargando…',
   editMode = 'immediate', onSave, onCancel,
   previousLabel = 'Anterior', nextLabel = 'Siguiente',
@@ -97,6 +107,15 @@ export function DataTable({
     imageThumbnail: 'Miniaturas',
     imageLarge: 'Grandes',
     imageHidden: 'Ocultar fotos',
+    imageOpen: (alt) => `Ampliar ${alt}`,
+    imagePreview: 'Vista ampliada de la foto',
+    imagePrevious: 'Anterior foto',
+    imageNext: 'Siguiente foto',
+    imageClose: 'Cerrar foto',
+    columns: 'Columnas',
+    resetColumns: 'Restablecer',
+    moveColumnUp: (header) => `Mover ${header} a la izquierda`,
+    moveColumnDown: (header) => `Mover ${header} a la derecha`,
     ...labels
   };
   const [localSort, setLocalSort] = useState(null);
@@ -105,6 +124,15 @@ export function DataTable({
   const [localPagination, setLocalPagination] = useState(initialPage);
   const [localSelected, setLocalSelected] = useState([]);
   const [localImageView, setLocalImageView] = useState(defaultImageView);
+  const columnDefaults = {
+    order: defaultColumnOrder ?? columns.map((column) => column.field),
+    visibility: defaultColumnVisibility ?? {}
+  };
+  const [storedColumns, setStoredColumns] = useState(() =>
+    loadColumnPreferences(columnPreferencesKey, columnDefaults));
+  const localColumns = storedColumns.key === columnPreferencesKey
+    ? storedColumns : loadColumnPreferences(columnPreferencesKey, columnDefaults);
+  const [imagePreview, setImagePreview] = useState(null);
   const [drafts, setDrafts] = useState({});
   const [validation, setValidation] = useState({});
   const [saving, setSaving] = useState({});
@@ -112,33 +140,60 @@ export function DataTable({
   const [fileVersions, setFileVersions] = useState({});
   const errorPrefix = useId().replace(/:/g, '');
 
+  useEffect(() => {
+    if (storedColumns.key !== columnPreferencesKey) setStoredColumns(localColumns);
+  }, [columnPreferencesKey, storedColumns.key]);
+
   const sort = controlledSort !== undefined ? controlledSort : localSort;
   const search = controlledSearch !== undefined ? controlledSearch : localSearch;
   const filters = controlledFilters !== undefined ? controlledFilters : localFilters;
   const pagination = controlledPagination ?? localPagination;
   const selected = controlledSelected !== undefined ? controlledSelected : localSelected;
   const imageView = controlledImageView ?? localImageView;
+  const columnOrder = normalizeColumnOrder(controlledColumnOrder ?? localColumns.order, columns);
+  const columnVisibility = controlledColumnVisibility ?? localColumns.visibility;
+  const columnByField = new Map(columns.map((column) => [column.field, column]));
+  const orderedColumns = columnOrder.map((field) => columnByField.get(field));
+  const customizableColumns = orderedColumns.filter((column) => !column.hidden);
+  const preferenceVisibleFields = customizableColumns.filter((column) =>
+    columnVisibility[column.field] !== false).map((column) => column.field);
   const saveMode = editable && editMode === 'save';
   const hasImageColumns = columns.some((column) => column.type === 'image' && !column.hidden);
-  const visibleColumns = columns.filter((column) => !column.hidden
+  const visibleColumns = orderedColumns.filter((column) => !column.hidden
+    && columnVisibility[column.field] !== false
     && !(column.type === 'image' && imageView === 'hidden'));
   const actionItems = Array.isArray(actions) ? actions : [];
   const hasActions = actionItems.length > 0 || saveMode;
   const showSearch = searchable || controlledSearch !== undefined;
   const showImageViewControl = allowImageViewChange && hasImageColumns;
+  const showColumnControl = allowColumnCustomization && customizableColumns.length > 0;
+  const orderReadOnly = controlledColumnOrder !== undefined && !onColumnOrderChange;
+  const visibilityReadOnly = controlledColumnVisibility !== undefined && !onColumnVisibilityChange;
   const showPagination = paginationEnabled || controlledPagination !== undefined;
   const colSpan = visibleColumns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0);
 
   const processedRows = useMemo(() => {
-    const filtered = manualFiltering ? rows : filterRows(rows, columns, search, filters);
+    const searchColumns = columns.map((column) => ({ ...column,
+      hidden: column.hidden || columnVisibility[column.field] === false
+        || (column.type === 'image' && imageView === 'hidden') }));
+    const filtered = manualFiltering ? rows : filterRows(rows, searchColumns, search, filters);
     return manualSorting ? filtered : sortRows(filtered, sort, columns);
-  }, [rows, columns, search, filters, sort, manualFiltering, manualSorting]);
+  }, [rows, columns, columnVisibility, imageView, search, filters, sort,
+    manualFiltering, manualSorting]);
   const total = manualPagination ? (rowCount ?? rows.length) : processedRows.length;
   const pageSize = Math.max(1, Number(pagination.pageSize) || 10);
   const maxPage = Math.max(0, Math.ceil(total / pageSize) - 1);
   const pageIndex = Math.max(0, Math.min(Number(pagination.pageIndex) || 0, maxPage));
   const pageRows = showPagination && !manualPagination
     ? paginateRows(processedRows, pageIndex, pageSize) : processedRows;
+  const previewColumn = imagePreview && columnByField.get(imagePreview.field);
+  const previewEntries = previewColumn ? pageRows.map((row, index) => ({
+    ...imageDetails(row?.[previewColumn.field], row, previewColumn),
+    rowId: getRowId(row, index)
+  })).filter((entry) => entry.source) : [];
+  const previewIndex = previewEntries.findIndex((entry) =>
+    String(entry.rowId) === String(imagePreview?.rowId));
+  const previewEntry = previewEntries[previewIndex] ?? null;
   const selectedSet = new Set(selected.map(String));
   const pageIds = pageRows.map((row, index) => getRowId(row, index));
   const selectedPageCount = pageIds.filter((id) => selectedSet.has(String(id))).length;
@@ -177,6 +232,46 @@ export function DataTable({
   const changeImageView = (next) => {
     if (controlledImageView === undefined) setLocalImageView(next);
     onImageViewChange?.(next);
+  };
+  const changeColumnOrder = (next) => {
+    if (controlledColumnOrder === undefined) {
+      setStoredColumns((current) => ({ ...current, key: columnPreferencesKey, order: next }));
+    }
+    onColumnOrderChange?.(next);
+    saveColumnPreferences(columnPreferencesKey, next, columnVisibility);
+  };
+  const changeColumnVisibility = (next) => {
+    if (controlledColumnVisibility === undefined) {
+      setStoredColumns((current) => ({ ...current, key: columnPreferencesKey, visibility: next }));
+    }
+    onColumnVisibilityChange?.(next);
+    saveColumnPreferences(columnPreferencesKey, columnOrder, next);
+  };
+  const moveColumn = (field, direction) => {
+    const visibleOrder = customizableColumns.map((column) => column.field);
+    const position = visibleOrder.indexOf(field);
+    const neighbor = visibleOrder[position + direction];
+    if (!neighbor
+      || columnByField.get(field)?.reorderable === false
+      || columnByField.get(neighbor)?.reorderable === false) return;
+    const next = [...columnOrder];
+    const index = next.indexOf(field);
+    const neighborIndex = next.indexOf(neighbor);
+    [next[index], next[neighborIndex]] = [next[neighborIndex], next[index]];
+    changeColumnOrder(next);
+  };
+  const toggleColumn = (field, visible) => {
+    if (columnByField.get(field)?.hideable === false
+      || (!visible && preferenceVisibleFields.length <= 1)) return;
+    changeColumnVisibility({ ...columnVisibility, [field]: visible });
+  };
+  const resetColumns = () => {
+    const order = normalizeColumnOrder(columnDefaults.order, columns);
+    if (!orderReadOnly) changeColumnOrder(order);
+    if (!visibilityReadOnly) changeColumnVisibility(columnDefaults.visibility);
+    saveColumnPreferences(columnPreferencesKey,
+      orderReadOnly ? columnOrder : order,
+      visibilityReadOnly ? columnVisibility : columnDefaults.visibility);
   };
   const togglePage = () => {
     const allSelected = pageIds.length > 0 && selectedPageCount === pageIds.length;
@@ -236,7 +331,7 @@ export function DataTable({
 
   return (
     <div className={`dt-container ${className}`.trim()}>
-      {(showSearch || showImageViewControl) && <div className="dt-toolbar">
+      {(showSearch || showImageViewControl || showColumnControl) && <div className="dt-toolbar">
         {showSearch && <label className="dt-search-label">
           <span className="dt-visually-hidden">{words.search}</span>
           <input className="dt-control dt-search" type="search" value={search ?? ''}
@@ -252,6 +347,10 @@ export function DataTable({
             <option value="hidden">{words.imageHidden}</option>
           </select>
         </label>}
+        {showColumnControl && <ColumnControls columns={customizableColumns}
+          visibleFields={preferenceVisibleFields} onMove={moveColumn} onToggle={toggleColumn}
+          onReset={resetColumns} orderReadOnly={orderReadOnly}
+          visibilityReadOnly={visibilityReadOnly} labels={words} />}
       </div>}
       {error && <div className="dt-message dt-error" role="alert">{error}</div>}
       <div className="dt-scroll">
@@ -314,7 +413,11 @@ export function DataTable({
                     const fieldError = validation[key]?.[column.field];
                     const errorId = `${errorPrefix}-${key}-${column.field}`;
                     return <td key={column.field} data-label={column.headerName ?? column.field}>
-                      {cellContent({ row, column, rowIndex, imageView, editable, saveMode, error: fieldError,
+                      {cellContent({ row, column, rowIndex, imageView, imageOpenLabel: words.imageOpen,
+                        onImageOpen: (value, currentRow, imageColumn) => {
+                          if (imageColumn.onImageClick) imageColumn.onImageClick(value, currentRow);
+                          else setImagePreview({ field: imageColumn.field, rowId: id });
+                        }, editable, saveMode, error: fieldError,
                         errorId, disabled, fileVersion: fileVersions[key] ?? 0,
                         selectOptionLabel: words.selectOption,
                         onEdit: (event) => updateEdit(event, originalRow, column, id) })}
@@ -366,6 +469,11 @@ export function DataTable({
             onClick={() => changePage({ pageIndex: pageIndex + 1, pageSize })}>{nextLabel}</button>
         </div>
       </div>}
+      <ImagePreview entry={previewEntry} previous={previewEntries[previewIndex - 1]}
+        next={previewEntries[previewIndex + 1]}
+        onPrevious={() => setImagePreview({ ...imagePreview, rowId: previewEntries[previewIndex - 1].rowId })}
+        onNext={() => setImagePreview({ ...imagePreview, rowId: previewEntries[previewIndex + 1].rowId })}
+        onClose={() => setImagePreview(null)} labels={words} />
     </div>
   );
 }

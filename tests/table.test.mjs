@@ -16,7 +16,7 @@ Object.defineProperty(globalThis, 'navigator', { value: dom.window.navigator, co
 globalThis.HTMLElement = dom.window.HTMLElement;
 globalThis.Node = dom.window.Node;
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
-const { render, screen, fireEvent, waitFor, cleanup } =
+const { render, screen, within, fireEvent, waitFor, cleanup } =
   await import('@testing-library/react');
 afterEach(cleanup);
 
@@ -70,6 +70,95 @@ test('image columns search their alt text only when explicitly enabled', () => {
   assert.equal(filterRows(rows, columns, 'retrato', {}).length, 0);
   assert.equal(filterRows(rows, [{ ...columns[0], searchable: true }, columns[1]], 'retrato', {}).length, 1);
   assert.equal(filterRows(rows, columns, '', { photo: 'retrato' }).length, 1);
+});
+
+test('viewer can reorder and hide columns while locked columns stay visible', () => {
+  const columns = [
+    { field: 'name', headerName: 'Nombre', hideable: false },
+    { field: 'team', headerName: 'Equipo' },
+    { field: 'status', headerName: 'Estado' }
+  ];
+  render(React.createElement(Table, {
+    columns, rows: [{ id: 1, name: 'Ana', team: 'Diseño', status: 'Activa' }],
+    allowColumnCustomization: true, searchable: true
+  }));
+  fireEvent.click(screen.getByText('Columnas', { selector: 'summary' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Mover Estado a la izquierda' }));
+  assert.deepEqual(screen.getAllByRole('columnheader').map((header) => header.textContent),
+    ['Nombre', 'Estado', 'Equipo']);
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Equipo' }));
+  assert.equal(screen.queryByRole('columnheader', { name: 'Equipo' }), null);
+  assert.equal(screen.getByRole('checkbox', { name: 'Nombre' }).disabled, true);
+  fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar en la tabla' }),
+    { target: { value: 'Diseño' } });
+  assert.ok(screen.getByText('No hay datos'));
+  fireEvent.click(screen.getByRole('button', { name: 'Restablecer' }));
+  assert.deepEqual(screen.getAllByRole('columnheader').map((header) => header.textContent),
+    ['Nombre', 'Equipo', 'Estado']);
+});
+
+test('permanently hidden columns do not appear in customization or block moving neighbors', () => {
+  render(React.createElement(Table, {
+    columns: [{ field: 'name', headerName: 'Nombre' },
+      { field: 'secret', headerName: 'Secreto', hidden: true },
+      { field: 'team', headerName: 'Equipo' }],
+    rows: [{ id: 1, name: 'Ana', secret: 'privado', team: 'Diseño' }],
+    allowColumnCustomization: true
+  }));
+  fireEvent.click(screen.getByText('Columnas', { selector: 'summary' }));
+  assert.equal(screen.queryByRole('checkbox', { name: 'Secreto' }), null);
+  assert.equal(screen.queryByRole('columnheader', { name: 'Secreto' }), null);
+  fireEvent.click(screen.getByRole('button', { name: 'Mover Equipo a la izquierda' }));
+  assert.deepEqual(screen.getAllByRole('columnheader').map((header) => header.textContent),
+    ['Equipo', 'Nombre']);
+});
+
+test('column preferences are restored by storage key and new columns are appended', () => {
+  window.localStorage.clear();
+  const columns = [{ field: 'name', headerName: 'Nombre' },
+    { field: 'team', headerName: 'Equipo' }];
+  const props = { columns, rows: [{ id: 1, name: 'Ana', team: 'Diseño' }],
+    allowColumnCustomization: true, columnPreferencesKey: 'test-columns' };
+  const { unmount } = render(React.createElement(Table, props));
+  fireEvent.click(screen.getByText('Columnas', { selector: 'summary' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Mover Equipo a la izquierda' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Nombre' }));
+  unmount();
+  render(React.createElement(Table, { ...props, columns: [...columns,
+    { field: 'status', headerName: 'Estado' }] }));
+  assert.deepEqual(screen.getAllByRole('columnheader').map((header) => header.textContent),
+    ['Equipo', 'Estado']);
+  window.localStorage.clear();
+});
+
+test('photo viewer opens a dialog, moves between images, and custom click overrides it', () => {
+  const prototype = window.HTMLDialogElement.prototype;
+  const originalShow = prototype.showModal;
+  const originalClose = prototype.close;
+  prototype.showModal = function () { this.open = true; };
+  prototype.close = function () { this.open = false; this.dispatchEvent(new window.Event('close')); };
+  try {
+    const columns = [{ field: 'photo', headerName: 'Foto', type: 'image', previewable: true }];
+    const rows = [{ id: 1, name: 'Ana', photo: { src: '/ana.jpg', alt: 'Retrato de Ana' } },
+      { id: 2, name: 'Luis', photo: { src: '/luis.jpg', alt: 'Retrato de Luis' } }];
+    const { unmount } = render(React.createElement(Table, { columns, rows }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ampliar Retrato de Ana' }));
+    assert.ok(within(screen.getByRole('dialog')).getByRole('img', { name: 'Retrato de Ana' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente foto' }));
+    assert.ok(within(screen.getByRole('dialog')).getByRole('img', { name: 'Retrato de Luis' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar foto' }));
+    assert.equal(screen.queryByRole('dialog'), null);
+    unmount();
+    let clicked = '';
+    render(React.createElement(Table, { rows, columns: [{ ...columns[0],
+      onImageClick: (_value, row) => { clicked = row.name; } }] }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ampliar Retrato de Ana' }));
+    assert.equal(clicked, 'Ana');
+    assert.equal(screen.queryByRole('dialog'), null);
+  } finally {
+    prototype.showModal = originalShow;
+    prototype.close = originalClose;
+  }
 });
 
 test('renders headers, data, empty state and legacy props', () => {

@@ -10,7 +10,7 @@
   background: var(--dt-surface);
   border: 1px solid var(--dt-separator);
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   -webkit-overflow-scrolling: touch;
   font: 400 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -30,7 +30,8 @@
 .dt-button:active { transform: scale(.98); }
 .dt-button:disabled { cursor: not-allowed; opacity: .5; }
 .dt-control { box-sizing: border-box; width: 100%; min-width: 8rem; padding: 6px 9px; }
-.dt-button:focus-visible, .dt-control:focus-visible { outline: 3px solid var(--dt-accent); outline-offset: 2px; }
+.dt-button:focus-visible, .dt-control:focus-visible, .dt-image-trigger:focus-visible,
+.dt-column-controls summary:focus-visible { outline: 3px solid var(--dt-accent); outline-offset: 2px; }
 .dt-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--dt-separator); }
 .dt-search-label { display: block; width: min(100%, 22rem); }
 .dt-search { width: 100%; }
@@ -41,6 +42,31 @@
 .dt-image-avatar { width: 42px; height: 42px; border-radius: 50%; }
 .dt-image-thumbnail { width: 64px; height: 48px; border-radius: 8px; }
 .dt-image-large { width: 96px; height: 72px; border-radius: 10px; }
+.dt-image-trigger { display: inline-flex; border: 0; padding: 0; border-radius: 10px; background: transparent; cursor: zoom-in; }
+.dt-image-dialog { box-sizing: border-box; width: min(92vw, 760px); max-height: 90vh; padding: 0; border: 1px solid var(--dt-separator); border-radius: 14px; background: var(--dt-surface); color: var(--dt-text); box-shadow: 0 18px 60px #0005; font: inherit; }
+.dt-image-dialog::backdrop { background: #000b; }
+.dt-image-dialog-header, .dt-image-dialog-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; }
+.dt-image-dialog-header { border-bottom: 1px solid var(--dt-separator); }
+.dt-image-dialog-header strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dt-image-dialog-header .dt-button { font-size: 22px; line-height: 1; }
+.dt-image-dialog > img { display: block; width: 100%; max-height: min(70vh, 640px); object-fit: contain; background: var(--dt-surface-hover); }
+.dt-image-dialog-actions { border-top: 1px solid var(--dt-separator); }
+.dt-column-controls { position: relative; margin-left: auto; }
+.dt-column-controls summary { list-style: none; }
+.dt-column-controls summary::-webkit-details-marker { display: none; }
+.dt-column-panel { position: absolute; z-index: 5; top: calc(100% + 8px); right: 0; box-sizing: border-box; width: min(90vw, 310px); padding: 12px; border: 1px solid var(--dt-separator); border-radius: 10px; background: var(--dt-surface); color: var(--dt-text); box-shadow: 0 10px 30px #0003; }
+.dt-column-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.dt-column-reset { border: 0; background: none; color: var(--dt-accent); font: inherit; cursor: pointer; }
+.dt-column-reset:disabled { opacity: .5; cursor: not-allowed; }
+.dt-column-reset:focus-visible { outline: 3px solid var(--dt-accent); outline-offset: 2px; }
+.dt-column-panel ul { margin: 0; padding: 0; list-style: none; }
+.dt-column-panel li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid var(--dt-separator); }
+.dt-column-toggle { display: inline-flex; align-items: center; gap: 8px; min-width: 0; cursor: pointer; }
+.dt-column-toggle span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dt-column-toggle input { accent-color: var(--dt-accent); }
+.dt-column-toggle input:focus-visible { outline: 3px solid var(--dt-accent); outline-offset: 2px; }
+.dt-column-move { display: inline-flex; gap: 4px; }
+.dt-column-move .dt-button { min-height: 30px; width: 30px; padding: 0; }
 .dt-action-symbol { display: inline-flex; align-items: center; justify-content: center; }
 .dt-action-icon { display: block; flex: none; }
 .dt-icon-only { width: 36px; padding-inline: 0; }
@@ -72,6 +98,8 @@
   .dt-pagination, .dt-page-actions { flex-wrap: wrap; }
   .dt-table th, .dt-table td { padding: 10px 12px; }
   .dt-image-view-label { width: 100%; justify-content: space-between; }
+  .dt-column-controls { width: 100%; }
+  .dt-column-controls summary { width: 100%; }
 }
 @media (prefers-color-scheme: dark) {
   .dt-container {

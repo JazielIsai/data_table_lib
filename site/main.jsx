@@ -55,16 +55,19 @@ import '@isai_dev/data_table_lib/style.css';
     id: 'photos',
     label: 'Fotos · v2',
     title: 'Fotos a tu manera · vista previa v2',
-    description: 'Prueba avatares, miniaturas, fotos grandes u ocúltalas. Los iconos de las acciones conservan etiquetas accesibles.',
+    description: 'Cambia la vista, reorganiza las columnas y abre las fotos. Las preferencias de columnas se guardan en este navegador.',
     Component: PhotoExample,
     code: `const columns = [
-  { field: 'photo', headerName: 'Foto', type: 'image', imageFit: 'cover' },
-  { field: 'name', headerName: 'Nombre' }
+  { field: 'photo', headerName: 'Foto', type: 'image',
+    imageFit: 'cover', previewable: true },
+  { field: 'name', headerName: 'Nombre', hideable: false }
 ];
 
 <Table columns={columns} rows={people}
   defaultImageView="avatar"
   allowImageViewChange
+  allowColumnCustomization
+  columnPreferencesKey="mi-tabla-equipo"
   actions={[{ label: 'Ver', iconName: 'view', iconOnly: true,
     onClick: (row) => openProfile(row) }]}
 />`
