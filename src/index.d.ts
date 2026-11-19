@@ -3,13 +3,23 @@ import type { CSSProperties, ReactNode, ChangeEvent, MouseEvent } from 'react';
 export type TableRow = object;
 export type TableImageView = 'avatar' | 'thumbnail' | 'large' | 'hidden';
 export type TableLayout = 'table' | 'gallery';
-export interface TableGalleryOptions {
+export interface TableGalleryOptions<Row extends TableRow = TableRow> {
   imageField?: string;
   titleField?: string;
   descriptionField?: string;
+  aspectRatio?: 'square' | 'landscape' | 'portrait';
+  cardSize?: 'compact' | 'comfortable';
+  renderDetails?: (row: Row, rowIndex: number) => ReactNode;
 }
 export type TableActionIconName = 'view' | 'edit' | 'delete' | 'download' | 'more' | 'check' | 'close';
-export interface TableImageValue { src: string; alt?: string }
+export interface TableImageValue {
+  src: string;
+  alt?: string;
+  srcSet?: string;
+  sizes?: string;
+  width?: number;
+  height?: number;
+}
 export interface TableOption { value: string | number; label: ReactNode }
 export interface TableColumn<Row extends TableRow = TableRow> {
   field: string;
@@ -58,6 +68,11 @@ export interface TableAction<Row extends TableRow = TableRow> {
   disabled?: boolean;
   onClick?: (row: Row, event: MouseEvent<HTMLButtonElement>) => void;
 }
+export interface TableBulkAction<Row extends TableRow = TableRow>
+  extends Omit<TableAction<Row>, 'onClick'> {
+  onClick?: (loadedRows: Row[], selectedIds: Array<string | number>,
+    event: MouseEvent<HTMLButtonElement>) => void;
+}
 export interface LegacyEditAction<Row extends TableRow = TableRow>
   extends Omit<TableAction<Row>, 'onClick'> {
   onClick?: (event: MouseEvent<HTMLButtonElement>, row: Row) => void;
@@ -90,11 +105,19 @@ export interface TableLabels {
   layoutTable?: string;
   layoutGallery?: string;
   gallery?: string;
+  gallerySort?: string;
+  galleryNoSort?: string;
+  galleryAscending?: string;
+  galleryDescending?: string;
+  selectedCount?: (count: number) => string;
+  bulkActions?: string;
+  clearSelection?: string;
 }
 interface BaseProps<Row extends TableRow> {
   columns?: TableColumn<Row>[];
   rows?: Row[];
   actions?: TableAction<Row>[];
+  bulkActions?: TableBulkAction<Row>[];
   caption?: ReactNode;
   actionsHeader?: ReactNode;
   getRowId?: (row: Row, index: number) => string | number;
@@ -102,7 +125,7 @@ interface BaseProps<Row extends TableRow> {
   className?: string;
   sortable?: boolean;
   sort?: TableSort | null;
-  onSortChange?: (sort: TableSort) => void;
+  onSortChange?: (sort: TableSort | null) => void;
   searchable?: boolean;
   search?: string;
   onSearchChange?: (search: string) => void;
@@ -148,7 +171,9 @@ export interface TableProps<Row extends TableRow = TableRow> extends BaseProps<R
   layout?: TableLayout;
   onLayoutChange?: (layout: TableLayout) => void;
   allowLayoutChange?: boolean;
-  gallery?: TableGalleryOptions;
+  /** Optional localStorage key for the preferred table/gallery layout. */
+  layoutPreferencesKey?: string;
+  gallery?: TableGalleryOptions<Row>;
   /** Legacy alias of actions. */
   getButtons?: TableAction<Row>[];
 }

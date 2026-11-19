@@ -21,7 +21,9 @@ export function ImagePreview({ entry, previous, next, onPrevious, onNext, onClos
       <button type="button" className="dt-button" onClick={close}
         aria-label={labels.imageClose}>×</button>
     </div>
-    <img src={entry.source} alt={entry.alt} />
+    <img src={entry.source} srcSet={entry.srcSet}
+      sizes={entry.srcSet ? '(max-width: 760px) 92vw, 760px' : undefined}
+      width={entry.width} height={entry.height} alt={entry.alt} />
     <div className="dt-image-dialog-actions">
       <button type="button" className="dt-button" disabled={!previous}
         onClick={onPrevious}>{labels.imagePrevious}</button>

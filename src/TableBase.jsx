@@ -6,6 +6,7 @@ import { ImagePreview } from './ImagePreview.jsx';
 import { ColumnControls } from './ColumnControls.jsx';
 import { GalleryView } from './GalleryView.jsx';
 import { loadColumnPreferences, normalizeColumnOrder, saveColumnPreferences } from './columnState.js';
+import { loadLayoutPreference, saveLayoutPreference } from './layoutState.js';
 
 const defaultId = (row, index) => row?.id ?? index;
 const initialPage = { pageIndex: 0, pageSize: 10 };
@@ -75,7 +76,7 @@ function cellContent({ row, column, rowIndex, imageView, imageOpenLabel, onImage
 }
 
 export function DataTable({
-  columns = [], rows = [], actions = [], caption, editable = false,
+  columns = [], rows = [], actions = [], bulkActions = [], caption, editable = false,
   legacyEditActions = false, getRowId = defaultId,
   actionsHeader = 'Acciones', emptyMessage = 'No hay datos', className = '',
   sortable = false, sort: controlledSort, onSortChange,
@@ -91,7 +92,7 @@ export function DataTable({
   columnVisibility: controlledColumnVisibility, defaultColumnVisibility,
   onColumnVisibilityChange, columnPreferencesKey,
   defaultLayout = 'table', layout: controlledLayout, onLayoutChange,
-  allowLayoutChange = false, gallery = {},
+  allowLayoutChange = false, layoutPreferencesKey, gallery = {},
   loading = false, error, loadingMessage = 'Cargando…',
   editMode = 'immediate', onSave, onCancel,
   previousLabel = 'Anterior', nextLabel = 'Siguiente',
@@ -123,6 +124,13 @@ export function DataTable({
     layoutTable: 'Tabla',
     layoutGallery: 'Galería',
     gallery: 'Galería de fotos',
+    gallerySort: 'Ordenar por',
+    galleryNoSort: 'Sin ordenar',
+    galleryAscending: 'Orden ascendente',
+    galleryDescending: 'Orden descendente',
+    selectedCount: (count) => `${count} ${count === 1 ? 'seleccionado' : 'seleccionados'}`,
+    bulkActions: 'Acciones de selección',
+    clearSelection: 'Limpiar selección',
     ...labels
   };
   const [localSort, setLocalSort] = useState(null);
@@ -131,7 +139,10 @@ export function DataTable({
   const [localPagination, setLocalPagination] = useState(initialPage);
   const [localSelected, setLocalSelected] = useState([]);
   const [localImageView, setLocalImageView] = useState(defaultImageView);
-  const [localLayout, setLocalLayout] = useState(defaultLayout);
+  const [storedLayout, setStoredLayout] = useState(() =>
+    loadLayoutPreference(layoutPreferencesKey, defaultLayout));
+  const localLayout = storedLayout.key === layoutPreferencesKey
+    ? storedLayout.layout : loadLayoutPreference(layoutPreferencesKey, defaultLayout).layout;
   const columnDefaults = {
     order: defaultColumnOrder ?? columns.map((column) => column.field),
     visibility: defaultColumnVisibility ?? {}
@@ -151,6 +162,11 @@ export function DataTable({
   useEffect(() => {
     if (storedColumns.key !== columnPreferencesKey) setStoredColumns(localColumns);
   }, [columnPreferencesKey, storedColumns.key]);
+  useEffect(() => {
+    if (storedLayout.key !== layoutPreferencesKey) {
+      setStoredLayout(loadLayoutPreference(layoutPreferencesKey, defaultLayout));
+    }
+  }, [layoutPreferencesKey, storedLayout.key]);
 
   const sort = controlledSort !== undefined ? controlledSort : localSort;
   const search = controlledSearch !== undefined ? controlledSearch : localSearch;
@@ -179,7 +195,12 @@ export function DataTable({
   const galleryTitleField = gallery.titleField
     ?? visibleColumns.find((column) => column.type !== 'image')?.field;
   const galleryDescriptionField = gallery.descriptionField;
+  const gallerySortColumns = columns.filter((column) => !column.hidden
+    && column.type !== 'image' && (sortable || column.sortable) && column.sortable !== false);
+  const galleryFilterColumns = columns.filter((column) => !column.hidden
+    && column.type !== 'image' && column.filterable);
   const actionItems = Array.isArray(actions) ? actions : [];
+  const bulkActionItems = Array.isArray(bulkActions) ? bulkActions : [];
   const hasActions = actionItems.length > 0 || saveMode;
   const showSearch = searchable || controlledSearch !== undefined;
   const showImageViewControl = allowImageViewChange && hasImageColumns;
@@ -224,12 +245,15 @@ export function DataTable({
   const resetPage = () => {
     if (showPagination && pageIndex !== 0) changePage({ pageIndex: 0, pageSize });
   };
-  const changeSort = (column) => {
-    const next = { field: column.field, direction:
-      sort?.field === column.field && sort.direction === 'asc' ? 'desc' : 'asc' };
+  const applySort = (next) => {
     if (controlledSort === undefined) setLocalSort(next);
     onSortChange?.(next);
     resetPage();
+  };
+  const changeSort = (column) => {
+    const next = { field: column.field, direction:
+      sort?.field === column.field && sort.direction === 'asc' ? 'desc' : 'asc' };
+    applySort(next);
   };
   const changeSearch = (next) => {
     if (controlledSearch === undefined) setLocalSearch(next);
@@ -252,8 +276,11 @@ export function DataTable({
     onImageViewChange?.(next);
   };
   const changeLayout = (next) => {
-    if (controlledLayout === undefined) setLocalLayout(next);
+    if (controlledLayout === undefined) {
+      setStoredLayout({ key: layoutPreferencesKey, layout: next });
+    }
     onLayoutChange?.(next);
+    saveLayoutPreference(layoutPreferencesKey, next);
   };
   const openImage = (value, row, column, id) => {
     if (column.onImageClick) column.onImageClick(value, row);
@@ -387,10 +414,23 @@ export function DataTable({
           visibilityReadOnly={visibilityReadOnly} labels={words} />}
       </div>}
       {error && <div className="dt-message dt-error" role="alert">{error}</div>}
+      {selectable && selected.length > 0 && bulkActionItems.length > 0 &&
+        <div className="dt-bulk-bar" role="toolbar" aria-label={words.bulkActions}>
+          <strong aria-live="polite">{words.selectedCount(selected.length)}</strong>
+          <div className="dt-actions">
+            {bulkActionItems.map((action, index) => <ActionButton key={action.id ?? index}
+              action={action} onClick={(event) => action.onClick?.(
+                rows.filter((row, rowIndex) => selectedSet.has(String(getRowId(row, rowIndex)))),
+                selected, event)} />)}
+            <button type="button" className="dt-button" onClick={() => changeSelection([])}>
+              {words.clearSelection}</button>
+          </div>
+        </div>}
       {layout === 'gallery' && <GalleryView caption={caption} rows={pageRows}
         imageColumn={galleryImageColumn} titleField={galleryTitleField}
         descriptionField={galleryDescriptionField} getRowId={getRowId}
         selectedSet={selectedSet} selectable={selectable}
+        selectedPageCount={selectedPageCount} onTogglePage={togglePage}
         onSelect={(id) => {
           const key = String(id);
           changeSelection(selectedSet.has(key)
@@ -398,6 +438,16 @@ export function DataTable({
             : [...selected, id]);
         }}
         actions={actionItems}
+        sortColumns={gallerySortColumns} filterColumns={galleryFilterColumns}
+        sort={sort} filters={filters}
+        sortReadOnly={controlledSort !== undefined && !onSortChange}
+        filterReadOnly={controlledFilters !== undefined && !onFiltersChange}
+        onSortField={(field) => applySort(field ? { field, direction: 'asc' } : null)}
+        onSortDirection={() => {
+          if (sort) applySort({ field: sort.field,
+            direction: sort.direction === 'asc' ? 'desc' : 'asc' });
+        }}
+        onFilter={changeFilter} gallery={gallery}
         renderAction={(action, row, index) => <ActionButton key={action.id ?? index}
           action={action} onClick={(event) => action.onClick?.(row, event)} />}
         onImageOpen={(value, row, id) => openImage(value, row, galleryImageColumn, id)}

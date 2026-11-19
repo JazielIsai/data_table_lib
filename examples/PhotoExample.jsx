@@ -14,34 +14,42 @@ const columns = [
   { field: 'photo', headerName: 'Foto', type: 'image', searchable: false,
     imageFit: 'cover', imageFallback: 'Sin foto', previewable: true },
   { field: 'name', headerName: 'Nombre', sortable: true, hideable: false },
-  { field: 'team', headerName: 'Equipo' }
+  { field: 'team', headerName: 'Equipo', filterable: true }
 ];
 
 export default function PhotoExample() {
   const [rows, setRows] = useState(people);
   const [imageView, setImageView] = useState('avatar');
+  const [selected, setSelected] = useState([]);
   const [notice, setNotice] = useState('');
 
   return <>
-    <p>Alterna entre tabla y galería. En la tabla puedes ajustar las columnas; en ambas vistas puedes ampliar las fotos.</p>
-    <Table caption="Equipo con fotografías" columns={columns} rows={rows}
+    <p>Ordena, filtra y selecciona fotos en la galería. Cambia a tabla cuando necesites comparar columnas.</p>
+    <Table caption="Equipo con fotografías" columns={columns} rows={rows} searchable
       defaultLayout="gallery" allowLayoutChange
-      gallery={{ imageField: 'photo', titleField: 'name', descriptionField: 'team' }}
+      layoutPreferencesKey="dt-demo-layout-v2"
+      gallery={{ imageField: 'photo', titleField: 'name', descriptionField: 'team',
+        aspectRatio: 'square', renderDetails: (row) => `Perfil #${row.id}` }}
       imageView={imageView} onImageViewChange={setImageView} allowImageViewChange
       allowColumnCustomization columnPreferencesKey="dt-demo-photos-v2"
+      selectable selectedRowIds={selected} onSelectionChange={setSelected}
+      bulkActions={[{ label: 'Ver selección', iconName: 'view',
+        onClick: (loaded, ids) => setNotice(
+          `${ids.length} ${ids.length === 1 ? 'seleccionado' : 'seleccionados'}: ${loaded.map((row) => row.name).join(', ')}`) }]}
       actions={[
         { id: 'view', label: 'Ver', iconName: 'view', iconOnly: true, variant: 'primary',
           onClick: (row) => setNotice(`${row.name} trabaja en ${row.team}.`) },
         { id: 'remove', label: 'Quitar', iconName: 'delete', iconOnly: true, variant: 'danger',
           onClick: (row) => {
             setRows((current) => current.filter((item) => item.id !== row.id));
+            setSelected((current) => current.filter((id) => id !== row.id));
             setNotice(`${row.name} se quitó de este ejemplo.`);
           } }
       ]} />
     <div className="example-feedback">
       <p role="status">{notice || `Vista actual: ${imageView}`}</p>
       {rows.length < people.length && <button type="button" className="dt-button"
-        onClick={() => { setRows(people); setNotice('Ejemplo restablecido.'); }}>
+        onClick={() => { setRows(people); setSelected([]); setNotice('Ejemplo restablecido.'); }}>
         Restablecer filas
       </button>}
     </div>
