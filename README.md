@@ -6,7 +6,7 @@ Creada por [Jaziel Isaí](https://isai-dev.com).
 
 Licencia [MIT](./LICENSE). Puedes usar, modificar y distribuir la librería conservando el aviso de copyright y la licencia.
 
-> Este repositorio incluye una vista previa de la versión 2. Las funciones de fotos y nuevos iconos todavía no forman parte de la versión estable publicada en npm.
+> La versión 2 está disponible como vista previa en npm mediante la etiqueta `next`. La instalación predeterminada sigue usando la versión estable.
 
 ## Instalar y ejecutar
 
@@ -16,6 +16,12 @@ En tu proyecto:
 
 ```bash
 npm install @isai_dev/data_table_lib
+```
+
+Para probar las funciones de fotos, galería y personalización de v2:
+
+```bash
+npm install @isai_dev/data_table_lib@next
 ```
 
 Después importa los componentes y el CSS:
