@@ -55,20 +55,26 @@ import '@isai_dev/data_table_lib/style.css';
     id: 'photos',
     label: 'Fotos · v2',
     title: 'Fotos en tabla o galería · vista previa v2',
-    description: 'Elige una galería para explorar imágenes o una tabla para comparar datos. Abre las fotos y ajusta las columnas de la tabla.',
+    description: 'Ordena, filtra y selecciona fotos en la galería; cambia a tabla para comparar datos. Tu presentación se guarda en este navegador.',
     Component: PhotoExample,
     code: `const columns = [
   { field: 'photo', headerName: 'Foto', type: 'image',
     imageFit: 'cover', previewable: true },
-  { field: 'name', headerName: 'Nombre', hideable: false }
+  { field: 'name', headerName: 'Nombre', sortable: true,
+    hideable: false },
+  { field: 'team', headerName: 'Equipo', filterable: true }
 ];
 
 <Table columns={columns} rows={people}
   defaultLayout="gallery" allowLayoutChange
+  layoutPreferencesKey="mi-tabla-vista"
   gallery={{ imageField: 'photo', titleField: 'name',
-    descriptionField: 'team' }}
+    descriptionField: 'team', aspectRatio: 'square' }}
   defaultImageView="avatar"
   allowImageViewChange
+  searchable selectable
+  bulkActions={[{ label: 'Ver selección',
+    onClick: (loadedRows, ids) => showSelection(loadedRows, ids) }]}
   allowColumnCustomization
   columnPreferencesKey="mi-tabla-equipo"
   actions={[{ label: 'Ver', iconName: 'view', iconOnly: true,

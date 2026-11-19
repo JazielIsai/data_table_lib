@@ -16,10 +16,13 @@ const sort: TableSort = { field: 'name', direction: 'asc' };
 
 export const examples = <>
   <Table columns={columns} rows={people} sortable searchable paginationEnabled
-    sort={sort} onSortChange={(next) => { next.direction; }}
+    sort={sort} onSortChange={(next) => { next?.direction; }}
     defaultImageView="avatar" allowImageViewChange
     defaultLayout="gallery" allowLayoutChange
-    gallery={{ imageField: 'photo', titleField: 'name', descriptionField: 'role' }}
+    gallery={{ imageField: 'photo', titleField: 'name', descriptionField: 'role',
+      aspectRatio: 'square', cardSize: 'compact',
+      renderDetails: (row) => row.role }}
+    layoutPreferencesKey="people-layout"
     onLayoutChange={(layout) => { const view: 'table' | 'gallery' = layout; void view; }}
     allowColumnCustomization columnPreferencesKey="people-table"
     defaultColumnOrder={['name', 'photo', 'role']}
@@ -32,7 +35,10 @@ export const examples = <>
     selectable onSelectionChange={(ids, loaded) => {
       ids.map(String);
       loaded[0]?.name;
-    }} />
+    }} bulkActions={[{ label: 'Process', onClick: (loaded, ids) => {
+      loaded[0]?.name;
+      ids.map(String);
+    } }]} />
   <TableEdit columns={columns} rows={people} editMode="save"
     onSave={async (draft, original) => { draft.name; original.id; }} />
 </>;

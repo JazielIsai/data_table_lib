@@ -49,27 +49,38 @@ const [imageView, setImageView] = useState('avatar');
 const columns = [
   { field: 'photo', headerName: 'Foto', type: 'image', searchable: false,
     imageFit: 'cover', imageFallback: 'Sin foto', previewable: true },
-  { field: 'name', headerName: 'Nombre', hideable: false }
+  { field: 'name', headerName: 'Nombre', sortable: true, hideable: false },
+  { field: 'team', headerName: 'Equipo', filterable: true }
 ];
-const rows = [{ id: 1, name: 'Ana', photo: {
-  src: '/photos/ana.jpg', alt: 'Retrato de Ana' } }];
+const rows = [{ id: 1, name: 'Ana', team: 'Diseño', photo: {
+  src: '/photos/ana-800.jpg', alt: 'Retrato de Ana',
+  srcSet: '/photos/ana-400.jpg 400w, /photos/ana-800.jpg 800w',
+  sizes: '(max-width: 640px) 90vw, 33vw', width: 800, height: 600 } }];
 
 <Table columns={columns} rows={rows}
   defaultLayout="gallery" allowLayoutChange
-  gallery={{ imageField: 'photo', titleField: 'name' }}
+  layoutPreferencesKey="mi-tabla-vista"
+  gallery={{ imageField: 'photo', titleField: 'name',
+    descriptionField: 'team', aspectRatio: 'square' }}
   imageView={imageView} onImageViewChange={setImageView}
-  allowImageViewChange
+  allowImageViewChange searchable selectable
+  bulkActions={[{ label: 'Ver selección',
+    onClick: (loadedRows, ids) => showSelection(loadedRows, ids) }]}
   allowColumnCustomization columnPreferencesKey="mi-tabla-personas"
   actions={[{ label: 'Ver perfil', iconName: 'view', iconOnly: true,
     variant: 'primary', onClick: (row) => openProfile(row) }]}
 />;
 ```
 
-Los valores de imagen sin URL o con error de carga muestran `imageFallback` (por defecto, “Sin foto”). Usa un `alt` descriptivo para fotos con significado; también puedes definir `imageAlt(value, row)`. `imageFit` acepta `cover` o `contain` e `imagePosition` ajusta el recorte. La búsqueda global omite columnas de imagen por defecto; `searchable: true` permite buscar por el texto alternativo.
+Los valores de imagen sin URL o con error de carga muestran `imageFallback` (por defecto, “Sin foto”). Usa un `alt` descriptivo para fotos con significado; también puedes definir `imageAlt(value, row)`. `imageFit` acepta `cover` o `contain` e `imagePosition` ajusta el recorte. La búsqueda global omite columnas de imagen por defecto; `searchable: true` permite buscar por el texto alternativo. Si tienes imágenes de varios tamaños, pasa `srcSet` y `sizes` para que el navegador elija la adecuada; `width` y `height` proporcionan sus dimensiones originales. Sin `srcSet`, la librería sigue usando `src` como antes.
 
 `previewable: true` abre la foto en un diálogo modal con botones para recorrer las fotos de la página actual. El diálogo se cierra con su botón o con Escape. Si necesitas tu propio visor, define `onImageClick(value, row)` en la columna; esa función sustituye al diálogo integrado. Sólo se amplían imágenes que tienen URL.
 
-Cuando las imágenes son el contenido principal, `defaultLayout="gallery"` muestra tarjetas con una foto grande y texto breve, siguiendo la [recomendación de Apple para colecciones con muchas imágenes](https://developer.apple.com/design/human-interface-guidelines/lists-and-tables). `allowLayoutChange` añade los botones **Tabla** y **Galería** para quien usa la librería. `layout` / `onLayoutChange` controlan la presentación desde la aplicación. `gallery.imageField` elige la columna de imagen; `titleField` y `descriptionField` eligen el texto de cada tarjeta. Si se omiten, se usa la primera columna de imagen y la primera columna de texto visible. La galería reutiliza búsqueda, paginación, selección, acciones y visor de fotos; el tamaño de avatar o miniatura y la personalización de columnas sólo afectan a la tabla. `TableEdit` sigue usando la tabla para conservar los controles de edición.
+Cuando las imágenes son el contenido principal, `defaultLayout="gallery"` muestra tarjetas con una foto grande y texto breve, siguiendo la [recomendación de Apple para colecciones con muchas imágenes](https://developer.apple.com/design/human-interface-guidelines/lists-and-tables). `allowLayoutChange` añade los botones **Tabla** y **Galería**. `layout` / `onLayoutChange` controlan la presentación desde la aplicación; `layoutPreferencesKey` guarda la elección en `localStorage` con una clave distinta de `columnPreferencesKey`.
+
+`gallery.imageField` elige la columna de imagen; `titleField` y `descriptionField` eligen el texto. Si se omiten, se usa la primera columna de imagen y la primera columna de texto visible. `aspectRatio` acepta `landscape` (4:3), `square` (1:1) y `portrait` (3:4); `cardSize` acepta `comfortable` o `compact`. `renderDetails(row, rowIndex)` añade contenido personalizado debajo del texto. La galería permite ordenar columnas `sortable` y filtrar columnas `filterable`, además de usar búsqueda, paginación, selección, acciones y visor de fotos. **Sin ordenar** llama `onSortChange(null)` cuando el orden es controlado. El tamaño de avatar o miniatura y la personalización de columnas sólo afectan a la tabla. `TableEdit` sigue usando la tabla para conservar los controles de edición.
+
+`bulkActions` muestra una barra cuando hay filas seleccionadas, en tabla o galería. Cada acción recibe `(loadedRows, selectedIds, event)`: `selectedIds` contiene toda la selección, incluso IDs de otras páginas; `loadedRows` contiene sólo las filas presentes en `rows`. El botón **Limpiar selección** borra la selección mediante `onSelectionChange` si está controlada.
 
 `allowColumnCustomization` muestra un panel para ocultar y mover columnas con teclado o ratón. `hideable: false` y `reorderable: false` bloquean esos cambios para una columna; `hidden: true` la oculta siempre. El panel impide ocultar la última columna visible. `columnPreferencesKey` guarda el orden y la visibilidad en `localStorage` del navegador; usa una clave única por tabla. Si no pasas la clave, la elección sólo dura mientras la tabla está montada. La aplicación también puede controlar el estado con `columnOrder` / `onColumnOrderChange` y `columnVisibility` / `onColumnVisibilityChange`; `defaultColumnOrder` y `defaultColumnVisibility` definen los valores iniciales no controlados. Las columnas nuevas se añaden al final del orden guardado. La búsqueda global omite las columnas ocultas por el usuario.
 
@@ -234,6 +245,7 @@ Los tipos de celda son `text`, `date`, `number`, `file`, `select` y `button`. Lo
 | `getRowId` | `(row, index) => string \| number` | ID estable; por defecto `row.id` y luego índice. |
 | `caption` | `ReactNode` | Título semántico de la tabla. |
 | `actions` | `TableAction[]` | Botones por fila; `onClick(row, event)`. |
+| `bulkActions` | `TableBulkAction[]` | Acciones de la selección; `onClick(loadedRows, selectedIds, event)`. |
 | `searchable`, `search`, `onSearchChange` | `boolean`, `string`, función | Búsqueda global opcional/controlada. |
 | `sortable`, `sort`, `onSortChange` | `boolean`, `{field, direction}`, función | Ordenamiento opcional/controlado. |
 | `filters`, `onFiltersChange` | objeto, función | Filtros de columnas controlados. |
@@ -243,7 +255,8 @@ Los tipos de celda son `text`, `date`, `number`, `file`, `select` y `button`. Lo
 | `defaultImageView`, `imageView`, `onImageViewChange` | vista, vista, función | Vista de fotos inicial o controlada. |
 | `allowImageViewChange` | `boolean` | Muestra el selector de vista a quien usa la tabla. |
 | `defaultLayout`, `layout`, `onLayoutChange` | `'table' \| 'gallery'`, vista, función | Presentación inicial o controlada de `Table`. |
-| `allowLayoutChange`, `gallery` | `boolean`, objeto | Permite alternar vistas y elige campos de foto, título y descripción. |
+| `allowLayoutChange`, `layoutPreferencesKey` | `boolean`, `string` | Permite alternar vistas y recordar la elección. |
+| `gallery` | `TableGalleryOptions` | Campos, proporción, tamaño y contenido adicional de las tarjetas. |
 | `allowColumnCustomization` | `boolean` | Muestra el panel para ocultar y mover columnas. |
 | `defaultColumnOrder`, `columnOrder`, `onColumnOrderChange` | `string[]`, `string[]`, función | Orden inicial o controlado de los campos. |
 | `defaultColumnVisibility`, `columnVisibility`, `onColumnVisibilityChange` | objeto, objeto, función | Visibilidad inicial o controlada por campo; `false` oculta. |

@@ -208,6 +208,80 @@ test('controlled gallery layout reports changes and respects the supplied view',
   assert.ok(screen.getByRole('region', { name: 'Galería de fotos' }));
 });
 
+test('gallery sorting, filtering and bulk actions use the current rows', () => {
+  const rows = [
+    { id: 1, name: 'Ana', team: 'Diseño', photo: '/ana.jpg' },
+    { id: 2, name: 'Luis', team: 'Desarrollo', photo: '/luis.jpg' },
+    { id: 3, name: 'Marta', team: 'Diseño', photo: '/marta.jpg' }
+  ];
+  let received;
+  render(React.createElement(Table, {
+    rows, columns: [
+      { field: 'photo', type: 'image' },
+      { field: 'name', headerName: 'Nombre', sortable: true },
+      { field: 'team', headerName: 'Equipo', filterable: true }
+    ], defaultLayout: 'gallery', selectable: true,
+    bulkActions: [{ label: 'Procesar', onClick: (loaded, ids) => {
+      received = { loaded: loaded.map((row) => row.name), ids };
+    } }]
+  }));
+  fireEvent.change(screen.getByRole('combobox', { name: 'Ordenar por' }),
+    { target: { value: 'name' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Orden descendente' }));
+  fireEvent.change(screen.getByRole('searchbox', { name: 'Filtrar Equipo' }),
+    { target: { value: 'Diseño' } });
+  assert.deepEqual(screen.getAllByRole('article').map((article) => article.getAttribute('aria-label')),
+    ['Marta', 'Ana']);
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar página' }));
+  assert.ok(screen.getByRole('toolbar', { name: 'Acciones de selección' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Procesar' }));
+  assert.deepEqual(received, { loaded: ['Ana', 'Marta'], ids: [3, 1] });
+  fireEvent.click(screen.getByRole('button', { name: 'Limpiar selección' }));
+  assert.equal(screen.queryByRole('toolbar', { name: 'Acciones de selección' }), null);
+  fireEvent.change(screen.getByRole('combobox', { name: 'Ordenar por' }),
+    { target: { value: '' } });
+  assert.deepEqual(screen.getAllByRole('article').map((article) => article.getAttribute('aria-label')),
+    ['Ana', 'Marta']);
+});
+
+test('layout preference survives remounting', () => {
+  window.localStorage.clear();
+  const props = {
+    columns: [{ field: 'photo', type: 'image' }, { field: 'name' }],
+    rows: [{ id: 1, name: 'Ana', photo: '/ana.jpg' }],
+    defaultLayout: 'gallery', allowLayoutChange: true,
+    layoutPreferencesKey: 'test-layout'
+  };
+  const { unmount } = render(React.createElement(Table, props));
+  fireEvent.click(screen.getByRole('button', { name: 'Tabla' }));
+  unmount();
+  render(React.createElement(Table, props));
+  assert.ok(screen.getByRole('table'));
+  assert.equal(screen.getByRole('button', { name: 'Tabla' }).getAttribute('aria-pressed'), 'true');
+  window.localStorage.clear();
+});
+
+test('gallery card options and responsive image sources are rendered', () => {
+  render(React.createElement(Table, {
+    columns: [{ field: 'photo', type: 'image' }, { field: 'name' }],
+    rows: [{ id: 1, name: 'Ana', photo: {
+      src: '/ana-400.jpg', srcSet: '/ana-400.jpg 400w, /ana-800.jpg 800w',
+      sizes: '(max-width: 600px) 90vw, 240px', width: 800, height: 600,
+      alt: 'Retrato de Ana' } }],
+    defaultLayout: 'gallery', gallery: {
+      aspectRatio: 'portrait', cardSize: 'compact',
+      renderDetails: (row) => `Perfil: ${row.name}`
+    }
+  }));
+  const image = screen.getByRole('img', { name: 'Retrato de Ana' });
+  assert.equal(image.getAttribute('srcset'), '/ana-400.jpg 400w, /ana-800.jpg 800w');
+  assert.equal(image.getAttribute('sizes'), '(max-width: 600px) 90vw, 240px');
+  assert.equal(image.getAttribute('width'), '800');
+  assert.match(image.parentElement.className, /dt-gallery-media-portrait/);
+  assert.match(screen.getByRole('list').className, /dt-gallery-grid-compact/);
+  assert.ok(screen.getByText('Perfil: Ana'));
+});
+
 test('renders headers, data, empty state and legacy props', () => {
   const html = renderToStaticMarkup(React.createElement(Table, {
     getColumns: [{ field: 'name', headerName: 'Name' }, { field: 'secret', hidden: true }],
