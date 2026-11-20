@@ -89,6 +89,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #2864df; outline-offs
 .copy-button:hover { background: #ffffff1c; }
 pre { overflow-x: auto; margin: 0; padding: 21px 18px; font: 500 .86rem/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; tab-size: 2; }
 .code-panel pre { max-height: 32rem; overflow: auto; }
+.code-source-note { margin: 0 18px 12px; color: #a9bad2; font-size: .8rem; }
 .code-panel > a { margin: auto 18px 19px; color: #91b5ff; font-size: .86rem; font-weight: 650; }
 .code-panel > a:hover, .install-section a:hover { text-decoration: underline; }
 .install-section { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 70px; align-items: center; padding: 80px 0 115px; border-top: 1px solid #e2e7ef; }
@@ -101,8 +102,16 @@ pre { overflow-x: auto; margin: 0; padding: 21px 18px; font: 500 .86rem/1.7 ui-m
 .docs-section { min-height: calc(100vh - 165px); padding: 45px 0 80px; border-top: 1px solid #e2e7ef; }
 .docs-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 24px; align-items: start; }
 .docs-toc { position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow: auto; padding: 20px; border: 1px solid #dce3ed; border-radius: 14px; background: #fff; }
+.docs-search-label { display: block; margin-bottom: 7px; font-size: .82rem; font-weight: 700; }
+.docs-search { width: 100%; min-height: 39px; padding: 8px 10px; border: 1px solid #cfd7e4; border-radius: 8px; background: #fff; color: #172235; font: inherit; font-size: .86rem; }
+.docs-search:focus-visible, .docs-content:focus-visible { outline: 3px solid #2864df; outline-offset: 3px; }
+.docs-search-results { display: grid; gap: 5px; margin-top: 18px; }
+.docs-search-results button { display: grid; gap: 2px; width: 100%; padding: 9px; border: 0; border-radius: 7px; background: transparent; color: #526177; text-align: left; cursor: pointer; }
+.docs-search-results button:hover, .docs-search-results button:focus-visible { background: #eaf0ff; color: #174dc7; }
+.docs-search-results small { color: #6f7c8f; }
+.docs-search-results p { margin: 0; color: #6f7c8f; font-size: .84rem; }
 .docs-toc strong { display: block; margin-bottom: 11px; font-size: .84rem; }
-.docs-toc strong:not(:first-child) { margin-top: 20px; padding-top: 17px; border-top: 1px solid #e2e7ef; }
+.docs-toc > strong { margin-top: 20px; padding-top: 17px; border-top: 1px solid #e2e7ef; }
 .docs-guide-list { display: grid; gap: 3px; }
 .docs-guide-list button { width: 100%; padding: 8px 9px; border: 0; border-radius: 7px; background: transparent; color: #526177; text-align: left; font-size: .86rem; cursor: pointer; }
 .docs-guide-list button.selected { background: #eaf0ff; color: #174dc7; font-weight: 700; }
@@ -185,7 +194,11 @@ footer .footer-repository { margin-left: auto; }
   .demo-switcher button.selected { background: #2b4060; color: #c7d9ff; }
   .demo-panel-heading > span { background: #194e34; color: #a5eac3; }
   .docs-toc, .docs-content { background: #18253b; border-color: #33445d; }
-  .docs-toc strong:not(:first-child) { border-color: #33445d; }
+  .docs-toc > strong { border-color: #33445d; }
+  .docs-search { background: #162238; border-color: #3d506c; color: #edf2fb; }
+  .docs-search-results button { color: #b7c4d6; }
+  .docs-search-results button:hover, .docs-search-results button:focus-visible { background: #233962; color: #c7d9ff; }
+  .docs-search-results small, .docs-search-results p { color: #a4b1c4; }
   .docs-guide-list button { color: #a4b1c4; }
   .docs-guide-list button.selected, .docs-toc a[aria-current] { background: #233962; color: #c7d9ff; }
   .docs-toc a, .docs-content p, .docs-content li { color: #b7c4d6; }

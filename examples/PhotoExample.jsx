@@ -3,11 +3,15 @@ import { Table } from '@isai_dev/data_table_lib';
 import anaPhoto from './assets/ana.jpg';
 import luisPhoto from './assets/luis.jpg';
 import martaPhoto from './assets/marta.jpg';
+import sofiaPhoto from './assets/sofia-portrait.jpg';
+import diegoPhoto from './assets/diego-landscape.jpg';
 
 const people = [
-  { id: 1, name: 'Ana García', team: 'Diseño', photo: { src: anaPhoto, alt: 'Retrato de Ana García' } },
-  { id: 2, name: 'Luis Torres', team: 'Desarrollo', photo: { src: luisPhoto, alt: 'Retrato de Luis Torres' } },
-  { id: 3, name: 'Marta Ruiz', team: 'Producto', photo: { src: martaPhoto, alt: 'Retrato de Marta Ruiz' } }
+  { id: 1, name: 'Ana García', team: 'Diseño', photo: { src: anaPhoto, alt: 'Retrato de Ana García', width: 512, height: 512 } },
+  { id: 2, name: 'Luis Torres', team: 'Desarrollo', photo: { src: luisPhoto, alt: 'Retrato de Luis Torres', width: 512, height: 512 } },
+  { id: 3, name: 'Marta Ruiz', team: 'Producto', photo: { src: martaPhoto, alt: 'Retrato de Marta Ruiz', width: 512, height: 512 } },
+  { id: 4, name: 'Sofía Vega', team: 'Investigación', photo: { src: sofiaPhoto, alt: 'Retrato vertical de Sofía Vega', width: 1024, height: 1536 } },
+  { id: 5, name: 'Diego Ríos', team: 'Ingeniería', photo: { src: diegoPhoto, alt: 'Retrato horizontal de Diego Ríos en su espacio de trabajo', width: 1536, height: 1024 } }
 ];
 
 const columns = [
@@ -24,7 +28,7 @@ export default function PhotoExample() {
   const [notice, setNotice] = useState('');
 
   return <>
-    <p>Ordena, filtra y selecciona fotos en la galería. Cambia a tabla cuando necesites comparar columnas.</p>
+    <p>Compara fotos cuadradas, verticales y horizontales sin recortes. Ordena, filtra y selecciona perfiles, o cambia a tabla para comparar columnas.</p>
     <Table caption="Equipo con fotografías" columns={columns} rows={rows} searchable
       defaultLayout="gallery" allowLayoutChange
       layoutPreferencesKey="dt-demo-layout-v2"

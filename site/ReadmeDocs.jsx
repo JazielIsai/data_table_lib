@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { Marked } from 'marked';
 import { gfmHeadingId } from 'marked-gfm-heading-id';
@@ -22,6 +22,7 @@ function renderDocument(document) {
     const nextLevel = Math.min(Number(heading.tagName.slice(1)) + 1, 6);
     const replacement = window.document.createElement(`h${nextLevel}`);
     for (const attribute of heading.attributes) replacement.setAttribute(attribute.name, attribute.value);
+    if (heading.id) replacement.tabIndex = -1;
     replacement.innerHTML = heading.innerHTML;
     heading.replaceWith(replacement);
   }
@@ -46,13 +47,18 @@ function renderDocument(document) {
   }
 
   const sections = [];
-  let current = { id: `${document.id}-introduccion`, label: 'Introducción', html: '' };
+  let current = { id: `${document.id}-introduccion`, label: 'Introducción', ids: [`${document.id}-introduccion`], subheadings: [], html: '', text: '' };
   for (const node of template.content.childNodes) {
     if (node.nodeType === 1 && node.tagName === 'H3') {
       if (current.html.trim()) sections.push(current);
-      current = { id: node.id, label: node.textContent, html: '' };
+      current = { id: node.id, label: node.textContent, ids: [node.id], subheadings: [], html: '', text: '' };
+    }
+    if (node.nodeType === 1 && /^H[4-6]$/.test(node.tagName) && node.id) {
+      current.ids.push(node.id);
+      current.subheadings.push({ id: node.id, label: node.textContent });
     }
     current.html += node.outerHTML ?? node.textContent;
+    current.text += ` ${node.textContent ?? ''}`;
   }
   if (current.html.trim()) sections.push(current);
   return sections;
@@ -70,13 +76,28 @@ export default function ReadmeDocs() {
   const initial = readLocation();
   const [activeId, setActiveId] = useState(initial.doc);
   const [sectionId, setSectionId] = useState(initial.section);
-  const active = documents.find((document) => document.id === activeId);
-  const sections = useMemo(() => renderDocument(active), [active]);
-  const selected = sections.find((section) => section.id === sectionId) ?? sections[0];
+  const [query, setQuery] = useState('');
+  const articleRef = useRef(null);
+  const focusOnChange = useRef(false);
+  const guides = useMemo(() => documents.map((document) => ({ ...document,
+    sections: renderDocument(document) })), []);
+  const active = guides.find((document) => document.id === activeId);
+  const sections = active.sections;
+  const selected = sections.find((section) => section.ids.includes(sectionId)) ?? sections[0];
+  const normalizedQuery = query.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
+  const matches = (value) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase().includes(normalizedQuery);
+  const results = normalizedQuery ? guides.flatMap((guide) => guide.sections.flatMap((section) => [
+    ...(matches(`${section.label} ${section.text}`)
+      ? [{ guide, section, targetId: section.id, label: section.label }] : []),
+    ...section.subheadings.filter((heading) => matches(heading.label))
+      .map((heading) => ({ guide, section, targetId: heading.id, label: heading.label }))
+  ])) : [];
 
   useEffect(() => {
     const sync = () => {
       const location = readLocation();
+      focusOnChange.current = true;
       setActiveId(location.doc);
       setSectionId(location.section);
     };
@@ -84,9 +105,21 @@ export default function ReadmeDocs() {
     return () => window.removeEventListener('popstate', sync);
   }, []);
 
+  useEffect(() => {
+    if (focusOnChange.current) {
+      const target = sectionId !== selected.id ? window.document.getElementById(sectionId) : null;
+      (target ?? articleRef.current)?.focus();
+      focusOnChange.current = false;
+    } else if (window.location.hash) {
+      window.document.getElementById(sectionId)?.scrollIntoView();
+    }
+  }, [activeId, selected.id, sectionId]);
+
   const show = (docId, id) => {
+    focusOnChange.current = true;
     setActiveId(docId);
     setSectionId(id);
+    setQuery('');
     const params = new URLSearchParams({ page: 'docs' });
     if (docId !== 'main') params.set('doc', docId);
     window.history.pushState(null, '', `?${params}#${encodeURIComponent(id)}`);
@@ -101,12 +134,23 @@ export default function ReadmeDocs() {
     </div>
     <div className="docs-layout">
       <aside className="docs-toc" aria-label="Navegación de documentación">
+        <label className="docs-search-label" htmlFor="docs-search">Buscar en la documentación</label>
+        <input id="docs-search" className="docs-search" type="search" value={query}
+          onChange={(event) => setQuery(event.target.value)} placeholder="Busca props, ejemplos…" />
+        {normalizedQuery ? <div className="docs-search-results" aria-live="polite">
+          <strong>{results.length} {results.length === 1 ? 'resultado' : 'resultados'}</strong>
+          {results.length ? results.map(({ guide, section, targetId, label }) =>
+            <button key={`${guide.id}-${targetId}`} type="button"
+              onClick={() => show(guide.id, targetId)}>
+              <span>{label}</span><small>{guide.label}{targetId !== section.id ? ` · ${section.label}` : ''}</small>
+            </button>) : <p>Prueba con otro término.</p>}
+        </div> : <>
         <strong>Guías</strong>
         <div className="docs-guide-list">
-          {documents.map((document) => <button key={document.id} type="button"
+          {guides.map((document) => <button key={document.id} type="button"
             className={document.id === activeId ? 'selected' : ''}
             aria-current={document.id === activeId ? 'page' : undefined}
-            onClick={() => show(document.id, renderDocument(document)[0].id)}>
+            onClick={() => show(document.id, document.sections[0].id)}>
             {document.label}
           </button>)}
         </div>
@@ -117,8 +161,9 @@ export default function ReadmeDocs() {
           onClick={(event) => { event.preventDefault(); show(activeId, section.id); }}>
           {section.label}
         </a>)}</nav>
+        </>}
       </aside>
-      <article className="docs-content" aria-label={`${active.label}: ${selected.label}`}
+      <article ref={articleRef} tabIndex={-1} className="docs-content" aria-label={`${active.label}: ${selected.label}`}
         dangerouslySetInnerHTML={{ __html: selected.html }} />
     </div>
   </section>;

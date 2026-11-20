@@ -8,6 +8,13 @@ import PhotoExample from '../examples/PhotoExample.jsx';
 import ProductExample from '../examples/ProductExample.jsx';
 import ViewsExample from '../examples/ViewsExample.jsx';
 import ControlsExample from '../examples/ControlsExample.jsx';
+import basicSource from '../examples/BasicExample.jsx?raw';
+import editableSource from '../examples/EditableExample.jsx?raw';
+import remoteSource from '../examples/RemoteExample.jsx?raw';
+import photoSource from '../examples/PhotoExample.jsx?raw';
+import productSource from '../examples/ProductExample.jsx?raw';
+import viewsSource from '../examples/ViewsExample.jsx?raw';
+import controlsSource from '../examples/ControlsExample.jsx?raw';
 import anaPhoto from '../examples/assets/ana.jpg';
 import luisPhoto from '../examples/assets/luis.jpg';
 import martaPhoto from '../examples/assets/marta.jpg';
@@ -24,183 +31,27 @@ const heroRows = [
 ];
 
 const demos = [
-  {
-    id: 'products',
-    label: 'Catálogo',
-    title: 'Productos en tabla o galería',
+  { id: 'products', label: 'Catálogo', title: 'Productos en tabla o galería',
     description: 'Compara precio e inventario en la tabla, o explora las fotos en la galería.',
-    Component: ProductExample,
-    code: `import { Table } from '@isai_dev/data_table_lib';
-import '@isai_dev/data_table_lib/style.css';
-
-const products = [
-  { id: 1, name: 'Cámara compacta', price: 2499,
-    photo: { src: '/camera.jpg', alt: 'Cámara compacta' } }
-];
-const columns = [
-  { field: 'photo', headerName: 'Foto', type: 'image' },
-  { field: 'name', headerName: 'Producto', pinned: 'left' },
-  { field: 'price', headerName: 'Precio', sortable: true }
-];
-
-export function Catalog() {
-  return <Table columns={columns} rows={products}
-    defaultLayout="gallery" allowLayoutChange
-    gallery={{ imageField: 'photo', titleField: 'name' }}
-    searchable csvExport={{ filename: 'catalogo.csv' }} />;
-}`
-  },
-  {
-    id: 'photos',
-    label: 'Directorio',
-    title: 'Personas con fotos y acciones',
-    description: 'Busca perfiles por nombre, selecciona personas y alterna entre avatares y galería.',
-    Component: PhotoExample,
-    code: `import { Table } from '@isai_dev/data_table_lib';
-import '@isai_dev/data_table_lib/style.css';
-
-const people = [
-  { id: 1, name: 'Ana García', team: 'Diseño',
-    photo: { src: '/ana.jpg', alt: 'Retrato de Ana García' } }
-];
-const columns = [
-  { field: 'photo', headerName: 'Foto', type: 'image', previewable: true },
-  { field: 'name', headerName: 'Nombre', sortable: true },
-  { field: 'team', headerName: 'Equipo', filterable: true }
-];
-
-export function Directory() {
-  return <Table columns={columns} rows={people}
-    defaultLayout="gallery" allowLayoutChange
-    gallery={{ imageField: 'photo', titleField: 'name',
-      descriptionField: 'team' }}
-    searchable selectable allowImageViewChange />;
-}`
-  },
-  {
-    id: 'remote',
-    label: 'Panel remoto',
-    title: 'Un panel conectado a tu API',
+    Component: ProductExample, code: productSource, file: 'ProductExample.jsx' },
+  { id: 'photos', label: 'Directorio', title: 'Fotos de todas las proporciones',
+    description: 'Explora retratos cuadrados, verticales y horizontales completos. Selecciona perfiles y cambia a tabla.',
+    Component: PhotoExample, code: photoSource, file: 'PhotoExample.jsx' },
+  { id: 'remote', label: 'Panel remoto', title: 'Un panel conectado a tu API',
     description: 'La tabla muestra una página; la exportación solicita todos los resultados filtrados al servidor.',
-    Component: RemoteExample,
-    code: `import { useEffect, useState } from 'react';
-import { Table } from '@isai_dev/data_table_lib';
-import '@isai_dev/data_table_lib/style.css';
-
-const columns = [
-  { field: 'name', headerName: 'Nombre', pinned: 'left' },
-  { field: 'status', headerName: 'Estado' }
-];
-
-export function RemotePanel() {
-  const [result, setResult] = useState({ rows: [], total: 0 });
-  const [search, setSearch] = useState('');
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-  useEffect(() => {
-    const query = new URLSearchParams({ search,
-      page: String(pagination.pageIndex), size: String(pagination.pageSize) });
-    fetch('/api/people?' + query).then(r => r.json()).then(setResult);
-  }, [search, pagination]);
-  return <Table columns={columns} rows={result.rows} rowCount={result.total}
-    searchable search={search} onSearchChange={setSearch}
-    paginationEnabled pagination={pagination} onPaginationChange={setPagination}
-    manualFiltering manualPagination
-    csvExport={{ onExport: async (_rows, context) => {
-      const response = await fetch('/api/people/export?search=' +
-        encodeURIComponent(context.search));
-      if (!response.ok) throw new Error('Export failed');
-      return response.blob();
-    } }} />;
-}`
-  },
-  {
-    id: 'views',
-    label: 'Vistas',
-    title: 'Guarda una vista y compártela',
+    Component: RemoteExample, code: remoteSource, file: 'RemoteExample.jsx' },
+  { id: 'views', label: 'Vistas', title: 'Guarda una vista y compártela',
     description: 'Configura la tabla o galería, guarda la vista con un nombre y comparte un enlace que la reproduce.',
-    Component: ViewsExample,
-    code: `import { Table } from '@isai_dev/data_table_lib';
-import '@isai_dev/data_table_lib/style.css';
-
-const columns = [
-  { field: 'photo', headerName: 'Foto', type: 'image' },
-  { field: 'name', headerName: 'Nombre', sortable: true },
-  { field: 'team', headerName: 'Equipo', filterable: true }
-];
-
-export function TeamViews({ people }) {
-  return <Table columns={columns} rows={people}
-    searchable sortable allowColumnCustomization
-    allowLayoutChange
-    gallery={{ imageField: 'photo', titleField: 'name' }}
-    viewsKey="team-views" shareableViews />;
-}`
-  },
-  {
-    id: 'controls',
-    label: 'Inputs',
-    title: 'Casillas y campos a tu medida',
+    Component: ViewsExample, code: viewsSource, file: 'ViewsExample.jsx' },
+  { id: 'controls', label: 'Inputs', title: 'Casillas y campos a tu medida',
     description: 'Prueba casillas, interruptores, opciones únicas y múltiples, y alterna entre lectura y edición.',
-    Component: ControlsExample,
-    code: `import { Table, TableEdit } from '@isai_dev/data_table_lib';
-import '@isai_dev/data_table_lib/style.css';
-
-const columns = [
-  { field: 'approved', headerName: 'Aprobado', type: 'checkbox' },
-  { field: 'alerts', headerName: 'Avisos', type: 'switch' },
-  { field: 'role', headerName: 'Rol', type: 'radio',
-    options: [{ value: 'reader', label: 'Lector' },
-      { value: 'editor', label: 'Editor' }] },
-  { field: 'channels', headerName: 'Canales', type: 'checkbox-group',
-    options: [{ value: 'email', label: 'Correo' },
-      { value: 'app', label: 'App' }] }
-];
-
-// Muestra controles de solo lectura:
-<Table columns={columns} rows={rows} />;
-
-// O permite editar y guardar un borrador por fila:
-<TableEdit columns={columns} rows={rows}
-  editMode="save" onSave={(draft, original) => save(draft, original)} />;`
-  },
-  {
-    id: 'local',
-    label: 'Datos locales',
-    title: 'Explora una tabla completa',
-    description: 'Busca, fija columnas, cambia su ancho con el ratón o las flechas y exporta el resultado a CSV.',
-    Component: BasicExample,
-    code: `import { Table } from '@isai_dev/data_table_lib';
-import '@isai_dev/data_table_lib/style.css';
-
-<Table
-  columns={columns}
-  rows={rows}
-  searchable
-  paginationEnabled
-  selectable
-  resizableColumns
-  pinActions
-  columnPreferencesKey="mi-tabla-columnas"
-  csvExport={{ filename: 'datos.csv', scope: 'filtered' }}
-/>`
-  },
-  {
-    id: 'edit',
-    label: 'Edición',
-    title: 'Edita con confianza',
+    Component: ControlsExample, code: controlsSource, file: 'ControlsExample.jsx' },
+  { id: 'local', label: 'Datos locales', title: 'Explora una tabla completa',
+    description: 'Busca, fija columnas, cambia su ancho y exporta el resultado a CSV.',
+    Component: BasicExample, code: basicSource, file: 'BasicExample.jsx' },
+  { id: 'edit', label: 'Edición', title: 'Edita con confianza',
     description: 'Cada fila tiene un borrador. Los cambios se validan antes de guardar.',
-    Component: EditableExample,
-    code: `import { TableEdit } from '@isai_dev/data_table_lib';
-
-<TableEdit
-  columns={columns}
-  rows={rows}
-  editMode="save"
-  onSave={async (draft, original) => {
-    await savePerson(draft, original);
-  }}
-/>`
-  }
+    Component: EditableExample, code: editableSource, file: 'EditableExample.jsx' }
 ];
 
 function CopyButton({ value }) {
@@ -318,9 +169,10 @@ function App() {
             <ActiveExample />
           </div>
           <div className="code-panel">
-            <div className="code-panel-heading"><span>Ejemplo de código</span><CopyButton value={active.code} /></div>
+            <div className="code-panel-heading"><span>Código real · {active.file}</span><CopyButton value={active.code} /></div>
             <pre><code>{active.code}</code></pre>
-            <a href={`${repository}/tree/main/examples`} target="_blank" rel="noreferrer">Ver los ejemplos completos</a>
+            <p className="code-source-note">Si el archivo importa <code>./assets</code> o <code>./data.js</code>, copia también esos recursos del repositorio.</p>
+            <a href={`${repository}/blob/main/examples/${active.file}`} target="_blank" rel="noreferrer">Ver archivo y recursos en GitHub</a>
           </div>
         </div>
       </section>

@@ -12,7 +12,7 @@ Abre [http://localhost:5173/examples/](http://localhost:5173/examples/). El scri
 | Archivo | Muestra |
 | --- | --- |
 | [ProductExample.jsx](./ProductExample.jsx) | Catálogo con imágenes, tabla o galería, precio, inventario y CSV. |
-| [PhotoExample.jsx](./PhotoExample.jsx) | Directorio con retratos, selección, visor ampliado y acciones. |
+| [PhotoExample.jsx](./PhotoExample.jsx) | Directorio con retratos cuadrados, verticales y horizontales, selección, visor ampliado y acciones. |
 | [RemoteExample.jsx](./RemoteExample.jsx) | Panel con estado controlado, paginación y exportación remota de todos los resultados filtrados. |
 | [BasicExample.jsx](./BasicExample.jsx) | Búsqueda, filtro, ordenamiento, selección, paginación y acciones con datos locales. |
 | [EditableExample.jsx](./EditableExample.jsx) | Borradores por fila, validación, guardar y cancelar. |

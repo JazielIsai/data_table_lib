@@ -7,7 +7,7 @@ La página del proyecto, un Release de GitHub y un paquete instalable son public
 | GitHub Pages | Sitio con documentación y ejemplos interactivos | Publicado en <https://jazielisai.github.io/data_table_lib/> |
 | GitHub Releases | Una versión identificada por un tag, notas y archivos descargables | `v0.1.0` y `v0.1.1` publicados; `v2.0.0-alpha.3` a `v2.0.0-alpha.8` como prereleases |
 | GitHub Packages | Un paquete en el registro npm de GitHub | No se publica al crear un release |
-| npmjs.com | Paquete que se instala con `npm install` | `latest`: `0.1.2`; `next`: `2.0.0-alpha.5`. |
+| npmjs.com | Paquete que se instala con `npm install` | Comprueba las etiquetas actuales con `npm view @isai_dev/data_table_lib dist-tags`. |
 
 ## Sitio
 
@@ -33,7 +33,7 @@ La vista previa [v2.0.0-alpha.7](https://github.com/JazielIsai/data_table_lib/re
 
 La vista previa [v2.0.0-alpha.8](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.8) añade casillas, interruptores, opciones únicas y múltiples, y más tipos de input. `Table` los muestra en lectura y `TableEdit` permite modificarlos en modo inmediato o con borrador por fila. La página pública incluye una demo **Inputs**. Su disponibilidad en npm también debe comprobarse por separado.
 
-Antes de publicar una nueva versión, ejecuta `npm test`, `npm run build:site` y `npm pack --dry-run`. Confirma que la versión de `package.json` coincide con el tag del nuevo release.
+Antes de publicar una nueva versión, ejecuta `npm test`, `npm run build:site` y `npm pack --dry-run`. Confirma que la versión de `package.json` coincide con el tag del nuevo release. El workflow `.github/workflows/publish-npm.yml` se ejecuta al **publicar** un Release y comprueba esa coincidencia antes de publicar el paquete.
 
 GitHub ofrece automáticamente archivos ZIP y TAR del código de ese tag. Si quieres que el release tenga un archivo listo para instalar, genera `npm pack` y adjunta el `.tgz` a la publicación. El ZIP del código y el `.tgz` generado por npm cumplen funciones distintas.
 
@@ -43,6 +43,10 @@ Para versiones posteriores, incrementa `version` en `package.json` (por ejemplo,
 
 **GitHub Packages** es un registro de paquetes distinto de Releases y de npmjs.com. El paquete actual está preparado para **npmjs.com** bajo el ámbito de la cuenta npm `@isai_dev`. Para publicarlo también en GitHub Packages habría que usar un ámbito de GitHub (por ejemplo, `@jazielisai`), configurar `https://npm.pkg.github.com` y publicar ese paquete por separado; no cambies el registro de este paquete por accidente.
 
-Antes de publicar, comprueba `npm whoami`, ejecuta `npm test` y `npm pack --dry-run`. La cuenta npm debe tener autenticación de dos factores para publicar. Una combinación de nombre y versión ya publicada no puede publicarse otra vez. Para futuras versiones, actualiza `version` en `package.json` y `package-lock.json` antes de publicar. La vista previa v2 usa el tag npm `next` para no sustituir la versión estable `latest`; se instala con `npm install @isai_dev/data_table_lib@next`. Publicar la página de ejemplos no publica el paquete en npm.
+Para activar la publicación automática, abre la configuración de `@isai_dev/data_table_lib` en npmjs.com → **Settings → Trusted publishing** y añade GitHub Actions con estos datos: usuario **JazielIsai**, repositorio **data_table_lib**, archivo de workflow **publish-npm.yml** (sólo el nombre, sin `.github/workflows/`). Permite la acción **npm publish**; deja vacío el nombre de entorno porque el workflow no declara uno. El primer Release publicado después de configurar esta relación ejecutará el workflow con OIDC, sin un token npm permanente. [Guía oficial de npm](https://docs.npmjs.com/trusted-publishers/).
+
+El workflow usa `next` para versiones preliminares (por ejemplo, `2.0.0-alpha.9`) y `latest` para versiones estables. Comprueba el resultado con `npm view @isai_dev/data_table_lib dist-tags --json` y `npm view @isai_dev/data_table_lib@VERSION version`. Una combinación de nombre y versión ya publicada no puede publicarse otra vez. Actualiza `version` en `package.json` y `package-lock.json` antes del Release. La vista previa v2 se instala con `npm install @isai_dev/data_table_lib@next`; publicar la página de ejemplos no publica el paquete en npm.
+
+Si aún no has configurado Trusted Publishing, puedes publicar manualmente con una sesión npm válida: `npm whoami`, `npm test`, `npm pack --dry-run` y `npm publish --access public --tag next`. La cuenta debe cumplir los requisitos de autenticación de npm. No publiques manualmente la misma versión después de que el workflow la haya publicado.
 
 El campo `author` de `package.json` y la firma en el sitio identifican al autor, [Jaziel Isaí](https://isai-dev.com). No se añade ningún coautor a los commits.
