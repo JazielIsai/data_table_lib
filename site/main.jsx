@@ -6,6 +6,7 @@ import EditableExample from '../examples/EditableExample.jsx';
 import RemoteExample from '../examples/RemoteExample.jsx';
 import PhotoExample from '../examples/PhotoExample.jsx';
 import ProductExample from '../examples/ProductExample.jsx';
+import ViewsExample from '../examples/ViewsExample.jsx';
 import anaPhoto from '../examples/assets/ana.jpg';
 import luisPhoto from '../examples/assets/luis.jpg';
 import martaPhoto from '../examples/assets/marta.jpg';
@@ -111,6 +112,29 @@ export function RemotePanel() {
 }`
   },
   {
+    id: 'views',
+    label: 'Vistas',
+    title: 'Guarda una vista y compártela',
+    description: 'Configura la tabla o galería, guarda la vista con un nombre y comparte un enlace que la reproduce.',
+    Component: ViewsExample,
+    code: `import { Table } from '@isai_dev/data_table_lib';
+import '@isai_dev/data_table_lib/style.css';
+
+const columns = [
+  { field: 'photo', headerName: 'Foto', type: 'image' },
+  { field: 'name', headerName: 'Nombre', sortable: true },
+  { field: 'team', headerName: 'Equipo', filterable: true }
+];
+
+export function TeamViews({ people }) {
+  return <Table columns={columns} rows={people}
+    searchable sortable allowColumnCustomization
+    allowLayoutChange
+    gallery={{ imageField: 'photo', titleField: 'name' }}
+    viewsKey="team-views" shareableViews />;
+}`
+  },
+  {
     id: 'local',
     label: 'Datos locales',
     title: 'Explora una tabla completa',
@@ -168,7 +192,8 @@ function CopyButton({ value }) {
 }
 
 function App() {
-  const [activeId, setActiveId] = useState('products');
+  const [activeId, setActiveId] = useState(() =>
+    new URLSearchParams(window.location.search).has('view') ? 'views' : 'products');
   const active = demos.find((demo) => demo.id === activeId);
   const ActiveExample = active.Component;
 
