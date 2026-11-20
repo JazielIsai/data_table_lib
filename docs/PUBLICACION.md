@@ -5,7 +5,7 @@ La página del proyecto, un Release de GitHub y un paquete instalable son public
 | Destino | Qué ofrece | Estado inicial |
 | --- | --- | --- |
 | GitHub Pages | Sitio con documentación y ejemplos interactivos | Publicado en <https://jazielisai.github.io/data_table_lib/> |
-| GitHub Releases | Una versión identificada por un tag, notas y archivos descargables | `v0.1.0` y `v0.1.1` publicados; `v2.0.0-alpha.3` a `v2.0.0-alpha.8` como prereleases |
+| GitHub Releases | Una versión identificada por un tag, notas y archivos descargables | `v0.1.0` y `v0.1.1` publicados; `v2.0.0-alpha.3` a `v2.0.0-alpha.8` como prereleases; `v2.0.0-alpha.9` marcado como Latest en GitHub |
 | GitHub Packages | Un paquete en el registro npm de GitHub | No se publica al crear un release |
 | npmjs.com | Paquete que se instala con `npm install` | Comprueba las etiquetas actuales con `npm view @isai_dev/data_table_lib dist-tags`. |
 
@@ -32,6 +32,10 @@ La vista previa [v2.0.0-alpha.6](https://github.com/JazielIsai/data_table_lib/re
 La vista previa [v2.0.0-alpha.7](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.7) añade vistas guardadas por nombre y enlaces para compartir búsqueda, filtros, columnas y presentación. El sitio público incluye una demo interactiva de la función. Su disponibilidad en npm debe comprobarse por separado del Release de GitHub.
 
 La vista previa [v2.0.0-alpha.8](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.8) añade casillas, interruptores, opciones únicas y múltiples, y más tipos de input. `Table` los muestra en lectura y `TableEdit` permite modificarlos en modo inmediato o con borrador por fila. La página pública incluye una demo **Inputs**. Su disponibilidad en npm también debe comprobarse por separado.
+
+La versión más reciente en GitHub es [v2.0.0-alpha.9](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.9). Añade búsqueda en la documentación, enlaces directos a secciones y ejemplos de fotos con varias proporciones. Está marcada como **Latest** por elección del autor, aunque su número `alpha.9` indica que el código de v2 sigue en desarrollo. npm todavía no la ofrece: la publicación automática está pendiente de resolver la configuración de Trusted Publisher. Comprueba npm antes de instalar esa versión.
+
+GitHub sólo muestra **Latest** en Releases no marcados como prerelease. Por eso `v2.0.0-alpha.9` se clasificó como Release final en GitHub para mostrar esa insignia; esta clasificación no cambia su versión semántica ni la etiqueta `next` prevista para npm.
 
 Antes de publicar una nueva versión, ejecuta `npm test`, `npm run build:site` y `npm pack --dry-run`. Confirma que la versión de `package.json` coincide con el tag del nuevo release. El workflow `.github/workflows/publish-npm.yml` se ejecuta al **publicar** un Release y comprueba esa coincidencia antes de publicar el paquete.
 
