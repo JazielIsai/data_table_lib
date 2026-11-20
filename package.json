@@ -1,13 +1,25 @@
 {
   "name": "@isai_dev/data_table_lib",
-  "version": "2.0.0-alpha.5",
-  "description": "Accessible React tables with editable cells and row actions",
+  "version": "2.0.0-alpha.6",
+  "description": "Tablas React que también se convierten en galerías de fotos, con edición y preferencias listas para usar",
+  "keywords": [
+    "react-table",
+    "data-grid",
+    "image-gallery",
+    "editable-table",
+    "react",
+    "typescript",
+    "table-gallery"
+  ],
   "author": {
     "name": "Jaziel Isaí",
     "url": "https://isai-dev.com"
   },
   "license": "MIT",
   "homepage": "https://jazielisai.github.io/data_table_lib/",
+  "bugs": {
+    "url": "https://github.com/JazielIsai/data_table_lib/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JazielIsai/data_table_lib.git"

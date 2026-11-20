@@ -13,6 +13,10 @@ La página del proyecto, un Release de GitHub y un paquete instalable son public
 
 El workflow `.github/workflows/pages.yml` compila `site/`. En **Settings → Pages → Build and deployment → Source**, elige **GitHub Actions**. Después ejecuta **Actions → Publish site → Run workflow** si el push inicial ya ocurrió antes de activar Pages. La URL esperada es <https://jazielisai.github.io/data_table_lib/>. No configures `isai-dev.com` como dominio de Pages: es el sitio personal del autor, enlazado desde la página de la librería.
 
+La página usa `site/public/social-preview.png` como imagen al compartir su enlace. La misma portada aparece al inicio del README en `docs/social-preview.png`. Si actualizas el diseño o los retratos, en macOS puedes regenerar ambas copias con `swift scripts/generate-social-preview.swift`.
+
+Para que GitHub muestre esa portada al compartir **el repositorio**, abre **Settings → General → Social preview → Edit → Upload an image** y sube `docs/social-preview.png`. GitHub no ofrece una API pública para cambiar esta imagen; subir el archivo al repositorio por sí solo no modifica la vista social del repositorio.
+
 ## Releases
 
 El primer release `v0.1.0` conserva el nombre anterior. La primera publicación en npm y el release `v0.1.1` usan `@isai_dev/data_table_lib` porque npm rechazó el nombre sin ámbito. Para instalar la versión pública usa `npm install @isai_dev/data_table_lib`.

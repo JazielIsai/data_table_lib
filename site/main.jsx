@@ -5,6 +5,10 @@ import BasicExample from '../examples/BasicExample.jsx';
 import EditableExample from '../examples/EditableExample.jsx';
 import RemoteExample from '../examples/RemoteExample.jsx';
 import PhotoExample from '../examples/PhotoExample.jsx';
+import ProductExample from '../examples/ProductExample.jsx';
+import anaPhoto from '../examples/assets/ana.jpg';
+import luisPhoto from '../examples/assets/luis.jpg';
+import martaPhoto from '../examples/assets/marta.jpg';
 import '@isai_dev/data_table_lib/style.css';
 import './style.css';
 
@@ -17,6 +21,95 @@ const heroRows = [
 ];
 
 const demos = [
+  {
+    id: 'products',
+    label: 'Catálogo',
+    title: 'Productos en tabla o galería',
+    description: 'Compara precio e inventario en la tabla, o explora las fotos en la galería.',
+    Component: ProductExample,
+    code: `import { Table } from '@isai_dev/data_table_lib';
+import '@isai_dev/data_table_lib/style.css';
+
+const products = [
+  { id: 1, name: 'Cámara compacta', price: 2499,
+    photo: { src: '/camera.jpg', alt: 'Cámara compacta' } }
+];
+const columns = [
+  { field: 'photo', headerName: 'Foto', type: 'image' },
+  { field: 'name', headerName: 'Producto', pinned: 'left' },
+  { field: 'price', headerName: 'Precio', sortable: true }
+];
+
+export function Catalog() {
+  return <Table columns={columns} rows={products}
+    defaultLayout="gallery" allowLayoutChange
+    gallery={{ imageField: 'photo', titleField: 'name' }}
+    searchable csvExport={{ filename: 'catalogo.csv' }} />;
+}`
+  },
+  {
+    id: 'photos',
+    label: 'Directorio',
+    title: 'Personas con fotos y acciones',
+    description: 'Busca perfiles por nombre, selecciona personas y alterna entre avatares y galería.',
+    Component: PhotoExample,
+    code: `import { Table } from '@isai_dev/data_table_lib';
+import '@isai_dev/data_table_lib/style.css';
+
+const people = [
+  { id: 1, name: 'Ana García', team: 'Diseño',
+    photo: { src: '/ana.jpg', alt: 'Retrato de Ana García' } }
+];
+const columns = [
+  { field: 'photo', headerName: 'Foto', type: 'image', previewable: true },
+  { field: 'name', headerName: 'Nombre', sortable: true },
+  { field: 'team', headerName: 'Equipo', filterable: true }
+];
+
+export function Directory() {
+  return <Table columns={columns} rows={people}
+    defaultLayout="gallery" allowLayoutChange
+    gallery={{ imageField: 'photo', titleField: 'name',
+      descriptionField: 'team' }}
+    searchable selectable allowImageViewChange />;
+}`
+  },
+  {
+    id: 'remote',
+    label: 'Panel remoto',
+    title: 'Un panel conectado a tu API',
+    description: 'La tabla muestra una página; la exportación solicita todos los resultados filtrados al servidor.',
+    Component: RemoteExample,
+    code: `import { useEffect, useState } from 'react';
+import { Table } from '@isai_dev/data_table_lib';
+import '@isai_dev/data_table_lib/style.css';
+
+const columns = [
+  { field: 'name', headerName: 'Nombre', pinned: 'left' },
+  { field: 'status', headerName: 'Estado' }
+];
+
+export function RemotePanel() {
+  const [result, setResult] = useState({ rows: [], total: 0 });
+  const [search, setSearch] = useState('');
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  useEffect(() => {
+    const query = new URLSearchParams({ search,
+      page: String(pagination.pageIndex), size: String(pagination.pageSize) });
+    fetch('/api/people?' + query).then(r => r.json()).then(setResult);
+  }, [search, pagination]);
+  return <Table columns={columns} rows={result.rows} rowCount={result.total}
+    searchable search={search} onSearchChange={setSearch}
+    paginationEnabled pagination={pagination} onPaginationChange={setPagination}
+    manualFiltering manualPagination
+    csvExport={{ onExport: async (_rows, context) => {
+      const response = await fetch('/api/people/export?search=' +
+        encodeURIComponent(context.search));
+      if (!response.ok) throw new Error('Export failed');
+      return response.blob();
+    } }} />;
+}`
+  },
   {
     id: 'local',
     label: 'Datos locales',
@@ -54,61 +147,6 @@ import '@isai_dev/data_table_lib/style.css';
     await savePerson(draft, original);
   }}
 />`
-  },
-  {
-    id: 'photos',
-    label: 'Fotos · v2',
-    title: 'Fotos en tabla o galería · vista previa v2',
-    description: 'Ordena, filtra y selecciona fotos en la galería; cambia a tabla para comparar datos. Tu presentación se guarda en este navegador.',
-    Component: PhotoExample,
-    code: `const columns = [
-  { field: 'photo', headerName: 'Foto', type: 'image',
-    imageFit: 'cover', previewable: true },
-  { field: 'name', headerName: 'Nombre', sortable: true,
-    hideable: false },
-  { field: 'team', headerName: 'Equipo', filterable: true }
-];
-
-<Table columns={columns} rows={people}
-  defaultLayout="gallery" allowLayoutChange
-  layoutPreferencesKey="mi-tabla-vista"
-  gallery={{ imageField: 'photo', titleField: 'name',
-    descriptionField: 'team', aspectRatio: 'square' }}
-  defaultImageView="avatar"
-  allowImageViewChange
-  searchable selectable
-  bulkActions={[{ label: 'Ver selección',
-    onClick: (loadedRows, ids) => showSelection(loadedRows, ids) }]}
-  allowColumnCustomization
-  columnPreferencesKey="mi-tabla-equipo"
-  actions={[{ label: 'Ver', iconName: 'view', iconOnly: true,
-    onClick: (row) => openProfile(row) }]}
-/>`
-  },
-  {
-    id: 'remote',
-    label: 'Datos remotos',
-    title: 'Conecta tu propia API',
-    description: 'Delega búsqueda, ordenamiento y paginación a tu servidor. Exporta todas las filas filtradas aunque sólo haya una página cargada.',
-    Component: RemoteExample,
-    code: `<Table
-  rows={response.rows}
-  rowCount={response.total}
-  manualSorting
-  manualFiltering
-  manualPagination
-  resizableColumns
-  csvExport={{ onExport: async (_rows, context) => {
-    const response = await fetch(buildExportUrl(context));
-    if (!response.ok) throw new Error('No se pudo exportar');
-    return response.blob();
-  } }}
-  sort={sort}
-  onSortChange={setSort}
-  pagination={pagination}
-  onPaginationChange={setPagination}
-  loading={loading}
-/>`
   }
 ];
 
@@ -130,7 +168,7 @@ function CopyButton({ value }) {
 }
 
 function App() {
-  const [activeId, setActiveId] = useState('local');
+  const [activeId, setActiveId] = useState('products');
   const active = demos.find((demo) => demo.id === activeId);
   const ActiveExample = active.Component;
 
@@ -152,8 +190,8 @@ function App() {
       <section className="hero" aria-labelledby="hero-title">
         <div className="hero-copy">
           <p className="eyebrow"><span className="eyebrow-line" /> Una librería para React</p>
-          <h1 id="hero-title">Tus datos, <span>claros desde la primera fila.</span></h1>
-          <p className="hero-description">Tablas listas para buscar, ordenar, seleccionar y editar. Usa datos locales o conecta tu API con una interfaz que se adapta a tu aplicación.</p>
+          <h1 id="hero-title">De tabla a galería, <span>sin cambiar tus datos.</span></h1>
+          <p className="hero-description">Tablas React que también se convierten en galerías de fotos, con edición y preferencias listas para usar.</p>
           <div className="hero-actions">
             <a className="button button-primary" href="#demo">Explorar la demo</a>
             <a className="button button-secondary" href={repository} target="_blank" rel="noreferrer">Ver repositorio</a>
@@ -175,6 +213,17 @@ function App() {
               ]}
               rows={heroRows}
             />
+            <div className="preview-gallery-heading"><span>Los mismos datos, en galería</span><span>Vista visual</span></div>
+            <div className="preview-gallery" aria-label="Vista de galería del equipo">
+              {[
+                { name: 'Ana García', photo: anaPhoto },
+                { name: 'Luis Torres', photo: luisPhoto },
+                { name: 'Marta Ruiz', photo: martaPhoto }
+              ].map((person) => <div key={person.name} className="preview-person">
+                <img src={person.photo} alt={`Retrato de ${person.name}`} />
+                <span>{person.name}</span>
+              </div>)}
+            </div>
           </div>
         </div>
       </section>
@@ -196,7 +245,7 @@ function App() {
       <section className="demo-section" id="demo" aria-labelledby="demo-title">
         <div className="section-heading">
           <p className="eyebrow">Pruébala aquí</p>
-          <h2 id="demo-title">Una librería, cuatro formas de usarla.</h2>
+          <h2 id="demo-title">Tres escenarios reales, más funciones para explorar.</h2>
           <p>Los ejemplos importan las mismas entradas públicas que usarías en otro proyecto.</p>
         </div>
         <div className="demo-switcher" role="group" aria-label="Tipo de ejemplo">
