@@ -27,6 +27,10 @@ export interface TableColumn<Row extends TableRow = TableRow> {
   hidden?: boolean;
   hideable?: boolean;
   reorderable?: boolean;
+  resizable?: boolean;
+  width?: number;
+  minWidth?: number;
+  maxWidth?: number;
   sortable?: boolean;
   filterable?: boolean;
   searchable?: boolean;
@@ -112,6 +116,22 @@ export interface TableLabels {
   selectedCount?: (count: number) => string;
   bulkActions?: string;
   clearSelection?: string;
+  exportCsv?: string;
+  resizeColumn?: (header: string) => string;
+}
+export interface TableCsvExport<Row extends TableRow = TableRow> {
+  filename?: string;
+  scope?: 'filtered' | 'page' | 'selected';
+  onExport?: (rows: Row[], context: {
+    scope: 'filtered' | 'page' | 'selected';
+    columns: TableColumn<Row>[];
+    selectedIds: Array<string | number>;
+    search: string;
+    filters: Record<string, string>;
+    sort: TableSort | null;
+    pagination: TablePagination;
+    rowCount: number;
+  }) => void | Promise<void>;
 }
 interface BaseProps<Row extends TableRow> {
   columns?: TableColumn<Row>[];
@@ -155,6 +175,11 @@ interface BaseProps<Row extends TableRow> {
   onColumnVisibilityChange?: (visibility: Record<string, boolean>) => void;
   /** Optional localStorage key for the table's column order and visibility. */
   columnPreferencesKey?: string;
+  resizableColumns?: boolean;
+  columnWidths?: Record<string, number>;
+  defaultColumnWidths?: Record<string, number>;
+  onColumnWidthsChange?: (widths: Record<string, number>) => void;
+  csvExport?: TableCsvExport<Row>;
   loading?: boolean;
   error?: ReactNode;
   loadingMessage?: ReactNode;

@@ -16,6 +16,9 @@ const sort: TableSort = { field: 'name', direction: 'asc' };
 
 export const examples = <>
   <Table columns={columns} rows={people} sortable searchable paginationEnabled
+    resizableColumns defaultColumnWidths={{ name: 180 }}
+    csvExport={{ filename: 'people.csv', scope: 'filtered',
+      onExport: (rows, context) => { rows[0]?.name; context.columns[0]?.field; } }}
     sort={sort} onSortChange={(next) => { next?.direction; }}
     defaultImageView="avatar" allowImageViewChange
     defaultLayout="gallery" allowLayoutChange

@@ -267,6 +267,8 @@ Los tipos de celda son `text`, `date`, `number`, `file`, `select` y `button`. Lo
 | `defaultColumnOrder`, `columnOrder`, `onColumnOrderChange` | `string[]`, `string[]`, función | Orden inicial o controlado de los campos. |
 | `defaultColumnVisibility`, `columnVisibility`, `onColumnVisibilityChange` | objeto, objeto, función | Visibilidad inicial o controlada por campo; `false` oculta. |
 | `columnPreferencesKey` | `string` | Guarda preferencias de columnas en `localStorage`. |
+| `resizableColumns`, `columnWidths`, `defaultColumnWidths`, `onColumnWidthsChange` | booleano, mapa de anchos, mapa, función | Ajuste del ancho con puntero o flechas. `columnWidths` permite controlarlo desde la aplicación; la clave de preferencias guarda los anchos locales. |
+| `csvExport` | objeto | Muestra «Exportar CSV». Configura `filename`, `scope` (`filtered`, `page` o `selected`) y opcionalmente `onExport(rows, context)`. |
 | `loading`, `error` | `boolean`, `ReactNode` | Estado de carga y aviso de error. |
 | `emptyMessage`, `loadingMessage` | `ReactNode` | Textos de estado. |
 | `className` | `string` | Clase adicional del contenedor. |
@@ -288,6 +290,18 @@ Los tipos de celda son `text`, `date`, `number`, `file`, `select` y `button`. Lo
 Cada columna acepta `field`, `headerName`, `hidden`, `hideable`, `reorderable`, `sortable`, `filterable`, `searchable`, `sortFn`, `filterFn`, `type`, `options`, `placeholder`, `renderCell`, `validate`, `onChange`, `onClick`, `label`, `icon`, `ariaLabel` y `style`. Para `type: 'image'`, también acepta `imageAlt`, `imageFit`, `imagePosition`, `imageFallback`, `previewable` y `onImageClick`. Cada acción acepta `id`, `label`, `icon`, `iconName`, `iconOnly`, `iconPosition`, `variant`, `ariaLabel`, `className`, `style`, `disabled` y `onClick`. Si sólo muestra un icono, proporciona un `label` de texto o `ariaLabel`.
 
 Los nombres anteriores `getColumns`, `getRows`, `getButtons` y `onCaption` siguen disponibles. En `TableEdit`, `getButtons` conserva `onClick(event, row)`; el prop nuevo `actions` usa `onClick(row, event)`. Si pasas ambas versiones, prevalece el nombre nuevo.
+
+### Anchos y exportación
+
+Activa `resizableColumns` para arrastrar el separador del encabezado. También se puede enfocar y ajustar con las flechas izquierda y derecha (Mayús cambia 25 px). Cada columna admite `width`, `minWidth`, `maxWidth` y `resizable: false`. `columnPreferencesKey` conserva los anchos en el navegador; usa `columnWidths` y `onColumnWidthsChange` si tu aplicación administra ese estado. Puedes cambiar la etiqueta con `labels.resizeColumn`.
+
+```jsx
+<Table columns={columns} rows={rows} resizableColumns
+  columnPreferencesKey="pedidos-columnas"
+  csvExport={{ filename: 'pedidos.csv', scope: 'filtered' }} />
+```
+
+El CSV integrado contiene las columnas visibles, omite botones y protege los valores que una hoja de cálculo podría interpretar como fórmulas. `filtered` exporta las filas cargadas tras búsqueda, filtros y ordenamiento; `page` exporta sólo la página actual; `selected` exporta las filas cargadas que estén seleccionadas. Con operaciones delegadas al servidor, estos alcances sólo cubren las filas cargadas. Usa `onExport(rows, context)` para solicitar al servidor un archivo completo; el callback sustituye la descarga integrada.
 
 ## Diseño, accesibilidad y desarrollo
 

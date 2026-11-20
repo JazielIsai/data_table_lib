@@ -19,17 +19,19 @@ export function loadColumnPreferences(key, defaults) {
       key,
       order: Array.isArray(saved?.order) ? saved.order : defaults.order,
       visibility: saved?.visibility && typeof saved.visibility === 'object' && !Array.isArray(saved.visibility)
-        ? saved.visibility : defaults.visibility
+        ? saved.visibility : defaults.visibility,
+      widths: saved?.widths && typeof saved.widths === 'object' && !Array.isArray(saved.widths)
+        ? saved.widths : defaults.widths
     };
   } catch {
     return { key, ...defaults };
   }
 }
 
-export function saveColumnPreferences(key, order, visibility) {
+export function saveColumnPreferences(key, order, visibility, widths = {}) {
   if (!key || typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(key, JSON.stringify({ order, visibility }));
+    window.localStorage.setItem(key, JSON.stringify({ order, visibility, widths }));
   } catch {
     // The table remains usable when browser storage is unavailable.
   }

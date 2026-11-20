@@ -3,7 +3,7 @@ import { Table } from '@isai_dev/data_table_lib';
 import { initialPeople } from './data.js';
 
 const columns = [
-  { field: 'name', headerName: 'Nombre', sortable: true, filterable: true },
+  { field: 'name', headerName: 'Nombre', sortable: true, filterable: true, width: 190 },
   { field: 'team', headerName: 'Equipo', sortable: true },
   { field: 'status', headerName: 'Estado' }
 ];
@@ -16,6 +16,8 @@ export default function BasicExample() {
     <p>Busca, filtra, ordena y selecciona filas. La paginación se hace en el navegador.</p>
     <Table columns={columns} rows={initialPeople} caption="Personas" searchable
       paginationEnabled selectable selectedRowIds={selectedIds}
+      resizableColumns columnPreferencesKey="demo-personas-columnas"
+      csvExport={{ filename: 'personas.csv', scope: 'filtered' }}
       onSelectionChange={setSelectedIds}
       actions={[{ label: 'Ver', onClick: (row) => setLastOpened(row.name) }]} />
     <p aria-live="polite">Seleccionadas: {selectedIds.length}

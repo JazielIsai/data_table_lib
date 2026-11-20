@@ -5,6 +5,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { JSDOM } from 'jsdom';
 import { filterRows, sortRows, paginateRows } from '../src/rowModel.js';
+import { toCsv } from '../src/csv.js';
 import { Table as TableEsm, TableEdit as TableEditEsm } from '../dist/index.js';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
@@ -27,6 +28,66 @@ test('exports ESM and CommonJS components', () => {
   for (const component of [TableEsm, TableEditEsm, Table, TableEdit]) {
     assert.equal(typeof component, 'function');
   }
+});
+
+test('CSV escapes quotes, newlines and spreadsheet formulas', () => {
+  const csv = toCsv([{ name: '=SUM(1,2)', note: 'A "quote"\nand more' }],
+    [{ field: 'name', headerName: 'Name' }, { field: 'note', headerName: 'Note' }]);
+  assert.equal(csv, '\uFEFF"Name","Note"\r\n"\'=SUM(1,2)","A ""quote""\nand more"\r\n');
+});
+
+test('column width supports keyboard, controlled state and local preferences', () => {
+  const columns = [{ field: 'name', headerName: 'Nombre', width: 150, minWidth: 100, maxWidth: 200 }];
+  const changes = [];
+  const props = { columns, rows: [{ id: 1, name: 'Ana' }], resizableColumns: true,
+    columnWidths: { name: 150 }, onColumnWidthsChange: (widths) => changes.push(widths) };
+  const { rerender, unmount } = render(React.createElement(Table, props));
+  const handle = screen.getByRole('separator', { name: 'Cambiar ancho de Nombre' });
+  fireEvent.keyDown(handle, { key: 'ArrowRight', shiftKey: true });
+  assert.deepEqual(changes, [{ name: 175 }]);
+  rerender(React.createElement(Table, { ...props, columnWidths: changes[0] }));
+  assert.equal(screen.getByRole('separator').getAttribute('aria-valuenow'), '175');
+  unmount();
+  render(React.createElement(Table, { columns, rows: [{ id: 1, name: 'Ana' }],
+    resizableColumns: true, columnPreferencesKey: 'test-widths' }));
+  fireEvent.keyDown(screen.getByRole('separator'), { key: 'ArrowRight' });
+  assert.equal(screen.getByRole('separator').getAttribute('aria-valuenow'), '160');
+  cleanup();
+  render(React.createElement(Table, { columns, rows: [{ id: 1, name: 'Ana' }],
+    resizableColumns: true, columnPreferencesKey: 'test-widths' }));
+  assert.equal(screen.getByRole('separator').getAttribute('aria-valuenow'), '160');
+  window.localStorage.removeItem('test-widths');
+});
+
+test('dragging a column edge commits a clamped width', () => {
+  const changes = [];
+  render(React.createElement(Table, {
+    columns: [{ field: 'name', headerName: 'Nombre', minWidth: 100, maxWidth: 210 }],
+    rows: [{ id: 1, name: 'Ana' }], resizableColumns: true,
+    onColumnWidthsChange: (widths) => changes.push(widths)
+  }));
+  const handle = screen.getByRole('separator');
+  handle.parentElement.getBoundingClientRect = () => ({ width: 160 });
+  fireEvent.pointerDown(handle, { button: 0, clientX: 20 });
+  fireEvent.pointerMove(window, { clientX: 100 });
+  fireEvent.pointerUp(window);
+  assert.deepEqual(changes, [{ name: 210 }]);
+  assert.equal(handle.getAttribute('aria-valuenow'), '210');
+});
+
+test('CSV export scopes filtered rows and delegates remote export', () => {
+  const calls = [];
+  render(React.createElement(Table, {
+    columns: [{ field: 'name', headerName: 'Nombre' }],
+    rows: [{ id: 1, name: 'Ana' }, { id: 2, name: 'Luis' }],
+    searchable: true, csvExport: { filename: 'personas.csv',
+      onExport: (rows, context) => calls.push({ rows, context }) }
+  }));
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Ana' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Exportar CSV' }));
+  assert.deepEqual(calls[0].rows.map((row) => row.name), ['Ana']);
+  assert.equal(calls[0].context.scope, 'filtered');
+  assert.equal(calls[0].context.columns[0].field, 'name');
 });
 
 test('image presentation can be configured and changed by the viewer', () => {

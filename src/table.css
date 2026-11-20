@@ -16,6 +16,13 @@
 }
 .dt-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .dt-table { width: 100%; min-width: 28rem; border-collapse: collapse; text-align: left; }
+.dt-table-resizable { table-layout: fixed; }
+.dt-table-resizable th, .dt-table-resizable td { overflow-wrap: anywhere; }
+.dt-resizable-heading { position: relative; padding-right: 25px !important; }
+.dt-resize-handle { position: absolute; top: 0; right: 0; bottom: 0; width: 12px; cursor: col-resize; touch-action: none; }
+.dt-resize-handle::after { content: ''; position: absolute; top: 20%; bottom: 20%; left: 5px; width: 2px; border-radius: 2px; background: var(--dt-separator); }
+.dt-resize-handle:hover::after, .dt-resize-handle:focus-visible::after { background: var(--dt-accent); }
+.dt-resize-handle:focus-visible { outline: 3px solid var(--dt-accent); outline-offset: -3px; border-radius: 4px; }
 .dt-table caption { padding: 16px 18px; text-align: left; font-size: 17px; font-weight: 600; }
 .dt-table th, .dt-table td { padding: 11px 18px; border-bottom: 1px solid var(--dt-separator); vertical-align: middle; }
 .dt-table thead th { color: var(--dt-secondary); font-size: 12px; font-weight: 600; letter-spacing: .01em; white-space: nowrap; }

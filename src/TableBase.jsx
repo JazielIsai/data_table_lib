@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { filterRows, paginateRows, sortRows } from './rowModel.js';
 import { ActionIcon, isActionIconName } from './ActionIcon.jsx';
 import { ImageCell, imageDetails } from './ImageCell.jsx';
@@ -7,6 +7,7 @@ import { ColumnControls } from './ColumnControls.jsx';
 import { GalleryView } from './GalleryView.jsx';
 import { loadColumnPreferences, normalizeColumnOrder, saveColumnPreferences } from './columnState.js';
 import { loadLayoutPreference, saveLayoutPreference } from './layoutState.js';
+import { downloadCsv, toCsv } from './csv.js';
 
 const defaultId = (row, index) => row?.id ?? index;
 const initialPage = { pageIndex: 0, pageSize: 10 };
@@ -91,6 +92,9 @@ export function DataTable({
   defaultColumnOrder, onColumnOrderChange,
   columnVisibility: controlledColumnVisibility, defaultColumnVisibility,
   onColumnVisibilityChange, columnPreferencesKey,
+  resizableColumns = false, columnWidths: controlledColumnWidths,
+  defaultColumnWidths, onColumnWidthsChange,
+  csvExport,
   defaultLayout = 'table', layout: controlledLayout, onLayoutChange,
   allowLayoutChange = false, layoutPreferencesKey, gallery = {},
   loading = false, error, loadingMessage = 'Cargando…',
@@ -131,6 +135,8 @@ export function DataTable({
     selectedCount: (count) => `${count} ${count === 1 ? 'seleccionado' : 'seleccionados'}`,
     bulkActions: 'Acciones de selección',
     clearSelection: 'Limpiar selección',
+    exportCsv: 'Exportar CSV',
+    resizeColumn: (header) => `Cambiar ancho de ${header}`,
     ...labels
   };
   const [localSort, setLocalSort] = useState(null);
@@ -145,7 +151,8 @@ export function DataTable({
     ? storedLayout.layout : loadLayoutPreference(layoutPreferencesKey, defaultLayout).layout;
   const columnDefaults = {
     order: defaultColumnOrder ?? columns.map((column) => column.field),
-    visibility: defaultColumnVisibility ?? {}
+    visibility: defaultColumnVisibility ?? {},
+    widths: defaultColumnWidths ?? {}
   };
   const [storedColumns, setStoredColumns] = useState(() =>
     loadColumnPreferences(columnPreferencesKey, columnDefaults));
@@ -157,6 +164,8 @@ export function DataTable({
   const [saving, setSaving] = useState({});
   const [saveErrors, setSaveErrors] = useState({});
   const [fileVersions, setFileVersions] = useState({});
+  const [dragWidths, setDragWidths] = useState({});
+  const resizeCleanup = useRef(null);
   const errorPrefix = useId().replace(/:/g, '');
 
   useEffect(() => {
@@ -167,6 +176,7 @@ export function DataTable({
       setStoredLayout(loadLayoutPreference(layoutPreferencesKey, defaultLayout));
     }
   }, [layoutPreferencesKey, storedLayout.key]);
+  useEffect(() => () => resizeCleanup.current?.(), []);
 
   const sort = controlledSort !== undefined ? controlledSort : localSort;
   const search = controlledSearch !== undefined ? controlledSearch : localSearch;
@@ -177,6 +187,7 @@ export function DataTable({
   const requestedLayout = controlledLayout ?? localLayout;
   const columnOrder = normalizeColumnOrder(controlledColumnOrder ?? localColumns.order, columns);
   const columnVisibility = controlledColumnVisibility ?? localColumns.visibility;
+  const columnWidths = controlledColumnWidths ?? localColumns.widths ?? {};
   const columnByField = new Map(columns.map((column) => [column.field, column]));
   const orderedColumns = columnOrder.map((field) => columnByField.get(field));
   const customizableColumns = orderedColumns.filter((column) => !column.hidden);
@@ -208,7 +219,9 @@ export function DataTable({
   const showLayoutControl = !editable && Boolean(galleryImageColumn) && allowLayoutChange;
   const orderReadOnly = controlledColumnOrder !== undefined && !onColumnOrderChange;
   const visibilityReadOnly = controlledColumnVisibility !== undefined && !onColumnVisibilityChange;
+  const widthsReadOnly = controlledColumnWidths !== undefined && !onColumnWidthsChange;
   const showPagination = paginationEnabled || controlledPagination !== undefined;
+  const showExport = Boolean(csvExport);
   const colSpan = visibleColumns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0);
 
   const processedRows = useMemo(() => {
@@ -291,14 +304,59 @@ export function DataTable({
       setStoredColumns((current) => ({ ...current, key: columnPreferencesKey, order: next }));
     }
     onColumnOrderChange?.(next);
-    saveColumnPreferences(columnPreferencesKey, next, columnVisibility);
+    saveColumnPreferences(columnPreferencesKey, next, columnVisibility, columnWidths);
   };
   const changeColumnVisibility = (next) => {
     if (controlledColumnVisibility === undefined) {
       setStoredColumns((current) => ({ ...current, key: columnPreferencesKey, visibility: next }));
     }
     onColumnVisibilityChange?.(next);
-    saveColumnPreferences(columnPreferencesKey, columnOrder, next);
+    saveColumnPreferences(columnPreferencesKey, columnOrder, next, columnWidths);
+  };
+  const changeColumnWidth = (field, width) => {
+    const next = { ...columnWidths, [field]: width };
+    if (controlledColumnWidths === undefined) {
+      setStoredColumns((current) => ({ ...current, key: columnPreferencesKey, widths: next }));
+    }
+    onColumnWidthsChange?.(next);
+    saveColumnPreferences(columnPreferencesKey, columnOrder, columnVisibility, next);
+  };
+  const widthFor = (column) => {
+    const value = dragWidths[column.field] ?? columnWidths[column.field] ?? column.width;
+    return Number.isFinite(Number(value)) && Number(value) > 0 ? Number(value) : undefined;
+  };
+  const clampWidth = (column, value) => Math.max(column.minWidth ?? 80,
+    Math.min(column.maxWidth ?? 800, Math.round(value)));
+  const startResize = (event, column) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    resizeCleanup.current?.();
+    const startX = event.clientX;
+    const startWidth = event.currentTarget.parentElement.getBoundingClientRect().width;
+    let nextWidth = clampWidth(column, startWidth);
+    const move = (pointer) => {
+      nextWidth = clampWidth(column, startWidth + pointer.clientX - startX);
+      setDragWidths((current) => ({ ...current, [column.field]: nextWidth }));
+    };
+    const finish = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', finish);
+      window.removeEventListener('pointercancel', cancel);
+      resizeCleanup.current = null;
+      setDragWidths((current) => { const next = { ...current }; delete next[column.field]; return next; });
+      changeColumnWidth(column.field, nextWidth);
+    };
+    const cancel = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', finish);
+      window.removeEventListener('pointercancel', cancel);
+      resizeCleanup.current = null;
+      setDragWidths((current) => { const next = { ...current }; delete next[column.field]; return next; });
+    };
+    resizeCleanup.current = cancel;
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', finish);
+    window.addEventListener('pointercancel', cancel);
   };
   const moveColumn = (field, direction) => {
     const visibleOrder = customizableColumns.map((column) => column.field);
@@ -320,11 +378,28 @@ export function DataTable({
   };
   const resetColumns = () => {
     const order = normalizeColumnOrder(columnDefaults.order, columns);
-    if (!orderReadOnly) changeColumnOrder(order);
-    if (!visibilityReadOnly) changeColumnVisibility(columnDefaults.visibility);
-    saveColumnPreferences(columnPreferencesKey,
-      orderReadOnly ? columnOrder : order,
-      visibilityReadOnly ? columnVisibility : columnDefaults.visibility);
+    const nextOrder = orderReadOnly ? columnOrder : order;
+    const nextVisibility = visibilityReadOnly ? columnVisibility : columnDefaults.visibility;
+    const nextWidths = widthsReadOnly ? columnWidths : columnDefaults.widths;
+    setStoredColumns((current) => ({ ...current, key: columnPreferencesKey,
+      order: controlledColumnOrder === undefined ? nextOrder : current.order,
+      visibility: controlledColumnVisibility === undefined ? nextVisibility : current.visibility,
+      widths: controlledColumnWidths === undefined ? nextWidths : current.widths }));
+    if (!orderReadOnly) onColumnOrderChange?.(nextOrder);
+    if (!visibilityReadOnly) onColumnVisibilityChange?.(nextVisibility);
+    if (!widthsReadOnly) onColumnWidthsChange?.(nextWidths);
+    saveColumnPreferences(columnPreferencesKey, nextOrder, nextVisibility, nextWidths);
+  };
+  const exportCsv = () => {
+    const scope = csvExport.scope ?? 'filtered';
+    const exportRows = scope === 'selected'
+      ? processedRows.filter((row, index) => selectedSet.has(String(getRowId(row, index))))
+      : scope === 'page' ? pageRows : processedRows;
+    const exportColumns = visibleColumns.filter((column) => column.type !== 'button');
+    const context = { scope, columns: exportColumns, selectedIds: selected,
+      search, filters, sort, pagination: { pageIndex, pageSize }, rowCount: total };
+    if (csvExport.onExport) csvExport.onExport(exportRows, context);
+    else downloadCsv(toCsv(exportRows, exportColumns), csvExport.filename);
   };
   const togglePage = () => {
     const allSelected = pageIds.length > 0 && selectedPageCount === pageIds.length;
@@ -384,7 +459,7 @@ export function DataTable({
 
   return (
     <div className={`dt-container ${className}`.trim()}>
-      {(showSearch || showImageViewControl || showColumnControl || showLayoutControl) && <div className="dt-toolbar">
+      {(showSearch || showImageViewControl || showColumnControl || showLayoutControl || showExport) && <div className="dt-toolbar">
         {showSearch && <label className="dt-search-label">
           <span className="dt-visually-hidden">{words.search}</span>
           <input className="dt-control dt-search" type="search" value={search ?? ''}
@@ -412,6 +487,10 @@ export function DataTable({
           visibleFields={preferenceVisibleFields} onMove={moveColumn} onToggle={toggleColumn}
           onReset={resetColumns} orderReadOnly={orderReadOnly}
           visibilityReadOnly={visibilityReadOnly} labels={words} />}
+        {showExport && <button type="button" className="dt-button" onClick={exportCsv}
+          disabled={loading || (csvExport.scope === 'selected' && selected.length === 0)}>
+          <ActionIcon name="download" />{words.exportCsv}
+        </button>}
       </div>}
       {error && <div className="dt-message dt-error" role="alert">{error}</div>}
       {selectable && selected.length > 0 && bulkActionItems.length > 0 &&
@@ -455,8 +534,18 @@ export function DataTable({
         labels={words} />}
       {layout === 'table' &&
       <div className="dt-scroll">
-        <table className="dt-table" aria-busy={loading}>
+        <table className={`dt-table ${resizableColumns ? 'dt-table-resizable' : ''}`}
+          style={resizableColumns ? { width: visibleColumns.reduce((sum, column) =>
+            sum + (widthFor(column) ?? 160), (selectable ? 42 : 0) + (hasActions ? 160 : 0)),
+            minWidth: 0 } : undefined}
+          aria-busy={loading}>
           {caption && <caption>{caption}</caption>}
+          {resizableColumns && <colgroup>
+            {selectable && <col style={{ width: 42 }} />}
+            {visibleColumns.map((column) => <col key={column.field}
+              style={{ width: widthFor(column) ?? 160 }} />)}
+            {hasActions && <col style={{ width: 160 }} />}
+          </colgroup>}
           <thead>
             <tr>
               {selectable && <th scope="col" className="dt-selection">
@@ -468,6 +557,7 @@ export function DataTable({
                 const canSort = (sortable || column.sortable) && column.sortable !== false;
                 const direction = sort?.field === column.field ? sort.direction : null;
                 return <th scope="col" key={column.field}
+                  className={resizableColumns ? 'dt-resizable-heading' : undefined}
                   aria-sort={direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : undefined}>
                   {canSort
                     ? <button type="button" className="dt-sort" onClick={() => changeSort(column)}>
@@ -477,6 +567,20 @@ export function DataTable({
                         </span>
                       </button>
                     : column.headerName ?? column.field}
+                  {resizableColumns && column.resizable !== false && <span
+                    role="separator" tabIndex={0} aria-orientation="vertical"
+                    aria-label={words.resizeColumn(column.headerName ?? column.field)}
+                    aria-valuemin={column.minWidth ?? 80} aria-valuemax={column.maxWidth ?? 800}
+                    aria-valuenow={widthFor(column) ?? 160}
+                    className="dt-resize-handle"
+                    onPointerDown={(event) => startResize(event, column)}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                      event.preventDefault();
+                      changeColumnWidth(column.field, clampWidth(column,
+                        (widthFor(column) ?? event.currentTarget.parentElement.getBoundingClientRect().width)
+                        + (event.key === 'ArrowRight' ? 1 : -1) * (event.shiftKey ? 25 : 10)));
+                    }} />}
                 </th>;
               })}
               {hasActions && <th scope="col">{actionsHeader}</th>}
