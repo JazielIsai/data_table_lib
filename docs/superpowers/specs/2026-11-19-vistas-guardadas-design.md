@@ -144,4 +144,4 @@ Un `<details>` en la barra, con el mismo estilo que `ColumnControls`:
 - SSR: el enlace se lee en el inicializador de estado si existe `window`, igual que hoy con `localStorage`; no se añade manejo especial de hidratación.
 - Ids de vistas guardadas: `crypto.randomUUID()` si existe, si no `Date.now()` en base 36.
 - El menú se oculta en una tabla sin columnas personalizables ni búsqueda, ya que no hay nada que guardar.
-- Versión: se publica en la próxima prealfa (`2.0.0-alpha.6`).
+- Versión: se publica en la próxima prealfa (`2.0.0-alpha.7`; `main` ya está en alpha.6).
