@@ -107,3 +107,52 @@ export function normalizeView(view, columns, { sortable = false, galleryAvailabl
   if (imageViews.has(view.imageView)) result.imageView = view.imageView;
   return result;
 }
+
+const isSavedView = (item) => isPlainObject(item) && typeof item.id === 'string'
+  && typeof item.name === 'string' && isPlainObject(item.view);
+
+export function loadSavedViews(key) {
+  if (!key || typeof window === 'undefined') return [];
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(key) ?? '[]');
+    return Array.isArray(saved) ? saved.filter(isSavedView) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveSavedViews(key, views) {
+  if (!key || typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(views));
+  } catch {
+    // Saved views stay usable for this session when storage is unavailable.
+  }
+}
+
+const newId = () => globalThis.crypto?.randomUUID?.() ?? Date.now().toString(36);
+
+/** Adds a named view, or replaces the one that already has that name. */
+export function upsertSavedView(views, name, view) {
+  const trimmed = String(name ?? '').trim();
+  const existing = views.find((item) => item.name === trimmed);
+  if (existing) return views.map((item) => item === existing ? { ...item, view } : item);
+  return [...views, { id: newId(), name: trimmed, view, createdAt: new Date().toISOString() }];
+}
+
+export function readViewParam(param, href) {
+  try {
+    const source = href ?? (typeof window === 'undefined' ? undefined : window.location.href);
+    return source ? decodeView(new URL(source).searchParams.get(param)) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Sets or removes the view parameter while keeping the rest of the URL intact. */
+export function withViewParam(href, param, encoded) {
+  const url = new URL(href);
+  if (!encoded || encoded === encodeView({})) url.searchParams.delete(param);
+  else url.searchParams.set(param, encoded);
+  return url.toString();
+}

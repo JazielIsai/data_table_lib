@@ -6,7 +6,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { JSDOM } from 'jsdom';
 import { filterRows, sortRows, paginateRows } from '../src/rowModel.js';
 import { toCsv } from '../src/csv.js';
-import { decodeView, encodeView, normalizeView } from '../src/viewState.js';
+import { decodeView, encodeView, loadSavedViews, normalizeView, readViewParam, saveSavedViews,
+  upsertSavedView, withViewParam } from '../src/viewState.js';
 import { Table as TableEsm, TableEdit as TableEditEsm, toCsv as toCsvEsm } from '../dist/index.js';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
@@ -622,4 +623,28 @@ test('views are normalized against the current columns', () => {
   assert.equal(normalizeView({ columnVisibility: { photo: false, team: false, added: false } },
     [{ field: 'photo' }, { field: 'team' }, { field: 'added' }],
     { sortable: true, galleryAvailable: true }).columnVisibility, undefined);
+});
+
+test('saved views survive bad storage and replace by name', () => {
+  window.localStorage.setItem('v-bad', '{oops');
+  assert.deepEqual(loadSavedViews('v-bad'), []);
+  let views = upsertSavedView([], ' Ventas ', { search: 'a' });
+  views = upsertSavedView(views, 'Ventas', { search: 'b' });
+  assert.equal(views.length, 1);
+  assert.equal(views[0].name, 'Ventas');
+  assert.deepEqual(views[0].view, { search: 'b' });
+  saveSavedViews('v-ok', views);
+  assert.deepEqual(loadSavedViews('v-ok'), views);
+  window.localStorage.removeItem('v-bad');
+  window.localStorage.removeItem('v-ok');
+});
+
+test('view links keep other query params and the hash', () => {
+  const href = withViewParam('http://x.test/app?tab=2#top', 'view', encodeView({ search: 'a' }));
+  const url = new URL(href);
+  assert.equal(url.searchParams.get('tab'), '2');
+  assert.equal(url.hash, '#top');
+  assert.deepEqual(readViewParam('view', href), { search: 'a' });
+  assert.equal(withViewParam(href, 'view', null), 'http://x.test/app?tab=2#top');
+  assert.equal(withViewParam(href, 'view', encodeView({})), 'http://x.test/app?tab=2#top');
 });
