@@ -121,6 +121,16 @@ export interface TableLabels {
   exportingCsv?: string;
   exportError?: string;
   resizeColumn?: (header: string) => string;
+  views?: string;
+  savedViews?: string;
+  noSavedViews?: string;
+  viewName?: string;
+  saveView?: string;
+  applyView?: (name: string) => string;
+  deleteView?: (name: string) => string;
+  copyViewLink?: string;
+  viewLinkCopied?: string;
+  viewLinkManual?: string;
 }
 export interface TableView {
   search?: string;

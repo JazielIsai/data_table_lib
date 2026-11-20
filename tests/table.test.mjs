@@ -697,3 +697,40 @@ test('without shareableViews the url view is ignored', () => {
   assert.equal(screen.getByRole('searchbox').value, '');
   window.history.replaceState(null, '', '/');
 });
+
+test('viewer saves, applies and deletes named views that persist', () => {
+  const props = { columns: [{ field: 'name' }, { field: 'team' }], rows: [], searchable: true,
+    viewsKey: 'views-test' };
+  const { unmount } = render(h(Table, props));
+  assert.equal(screen.getByRole('button', { name: 'Guardar vista' }).disabled, true);
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'ana' } });
+  fireEvent.change(screen.getByRole('textbox', { name: 'Nombre de la vista' }), { target: { value: 'Ana' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar vista' }));
+  unmount();
+  render(h(Table, props));
+  assert.equal(screen.getByRole('searchbox').value, '');
+  fireEvent.click(screen.getByRole('button', { name: 'Aplicar Ana' }));
+  assert.equal(screen.getByRole('searchbox').value, 'ana');
+  assert.equal(screen.getByRole('button', { name: 'Aplicar Ana' }).getAttribute('aria-current'), 'true');
+  fireEvent.click(screen.getByRole('button', { name: 'Eliminar Ana' }));
+  assert.deepEqual(loadSavedViews('views-test'), []);
+  window.localStorage.removeItem('views-test');
+});
+
+test('copy link writes the current view and falls back to a visible field', async () => {
+  window.history.replaceState(null, '', '/app?tab=2');
+  let copied;
+  Object.defineProperty(navigator, 'clipboard', { configurable: true,
+    value: { writeText: async (t) => { copied = t; } } });
+  render(h(Table, { columns: [{ field: 'name' }], rows: [], searchable: true, shareableViews: true }));
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'ana' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Copiar enlace' }));
+  await screen.findByText('Enlace copiado');
+  assert.equal(new URL(copied).searchParams.get('tab'), '2');
+  assert.deepEqual(readViewParam('view', copied), { search: 'ana' });
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+  fireEvent.click(screen.getByRole('button', { name: 'Copiar enlace' }));
+  assert.equal((await screen.findByRole('textbox', { name: 'Copia este enlace' })).value, copied);
+  assert.equal(window.location.search, '?tab=2');
+  window.history.replaceState(null, '', '/');
+});

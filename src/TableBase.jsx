@@ -8,7 +8,9 @@ import { GalleryView } from './GalleryView.jsx';
 import { loadColumnPreferences, normalizeColumnOrder, saveColumnPreferences } from './columnState.js';
 import { loadLayoutPreference, saveLayoutPreference } from './layoutState.js';
 import { downloadBlob, downloadCsv, toCsv } from './csv.js';
-import { normalizeView, readViewParam } from './viewState.js';
+import { encodeView, loadSavedViews, normalizeView, readViewParam, saveSavedViews,
+  upsertSavedView, viewsEqual, withViewParam } from './viewState.js';
+import { ViewMenu } from './ViewMenu.jsx';
 
 const defaultId = (row, index) => row?.id ?? index;
 const initialPage = { pageIndex: 0, pageSize: 10 };
@@ -143,15 +145,35 @@ export function DataTable({
     exportingCsv: 'Exportando…',
     exportError: 'No se pudo exportar el CSV',
     resizeColumn: (header) => `Cambiar ancho de ${header}`,
+    views: 'Vistas',
+    savedViews: 'Vistas guardadas',
+    noSavedViews: 'Aún no hay vistas guardadas',
+    viewName: 'Nombre de la vista',
+    saveView: 'Guardar vista',
+    applyView: (name) => `Aplicar ${name}`,
+    deleteView: (name) => `Eliminar ${name}`,
+    copyViewLink: 'Copiar enlace',
+    viewLinkCopied: 'Enlace copiado',
+    viewLinkManual: 'Copia este enlace',
     ...labels
   };
   const linksEnabled = Boolean(shareableViews) || Boolean(syncViewToUrl);
   const viewParam = (typeof shareableViews === 'object' && shareableViews?.param) || 'view';
   const viewOptions = { sortable,
     galleryAvailable: !editable && columns.some((column) => column.type === 'image' && !column.hidden) };
+  const columnDefaults = {
+    order: defaultColumnOrder ?? columns.map((column) => column.field),
+    visibility: defaultColumnVisibility ?? {},
+    widths: defaultColumnWidths ?? {}
+  };
+  // What a view looks like before anyone changes it; links store only the differences.
+  const baseView = { search: '', filters: {}, sort: null,
+    columnOrder: normalizeColumnOrder(columnDefaults.order, columns),
+    columnVisibility: columnDefaults.visibility, columnWidths: columnDefaults.widths,
+    layout: defaultLayout, imageView: defaultImageView };
   const [initialView] = useState(() => {
     const fromUrl = linksEnabled ? readViewParam(viewParam) : null;
-    const source = fromUrl ?? defaultView;
+    const source = fromUrl ? { ...baseView, ...fromUrl } : defaultView;
     return source ? { view: normalizeView(source, columns, viewOptions), fromUrl: Boolean(fromUrl) } : null;
   });
   const seed = initialView?.view ?? {};
@@ -166,11 +188,6 @@ export function DataTable({
     : loadLayoutPreference(layoutPreferencesKey, defaultLayout));
   const localLayout = storedLayout.key === layoutPreferencesKey
     ? storedLayout.layout : loadLayoutPreference(layoutPreferencesKey, defaultLayout).layout;
-  const columnDefaults = {
-    order: defaultColumnOrder ?? columns.map((column) => column.field),
-    visibility: defaultColumnVisibility ?? {},
-    widths: defaultColumnWidths ?? {}
-  };
   const [storedColumns, setStoredColumns] = useState(() => {
     const saved = loadColumnPreferences(columnPreferencesKey, columnDefaults);
     return { ...saved,
@@ -189,6 +206,7 @@ export function DataTable({
   const [dragWidths, setDragWidths] = useState({});
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
+  const [savedViews, setSavedViews] = useState(() => loadSavedViews(viewsKey));
   const resizeCleanup = useRef(null);
   const viewBatch = useRef(null);
   const initialViewAnnounced = useRef(false);
@@ -273,6 +291,7 @@ export function DataTable({
   const widthsReadOnly = controlledColumnWidths !== undefined && !onColumnWidthsChange;
   const showPagination = paginationEnabled || controlledPagination !== undefined;
   const showExport = Boolean(csvExport);
+  const showViewMenu = Boolean(viewsKey) || linksEnabled;
   const colSpan = visibleColumns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0);
 
   const processedRows = useMemo(() => {
@@ -480,6 +499,24 @@ export function DataTable({
       if (Object.keys(patch).length) onViewChange?.({ ...currentView, ...patch });
     }
   };
+  const viewLink = () => {
+    const changes = Object.fromEntries(Object.entries(currentView)
+      .filter(([key, value]) => !sameValue(value, baseView[key])));
+    return withViewParam(window.location.href, viewParam, encodeView(changes));
+  };
+  const copyViewLink = async () => {
+    const href = viewLink();
+    try {
+      await navigator.clipboard.writeText(href);
+      return null;
+    } catch {
+      return href;
+    }
+  };
+  const updateSavedViews = (next) => {
+    setSavedViews(next);
+    saveSavedViews(viewsKey, next);
+  };
   const exportCsv = async () => {
     if (exporting) return;
     setExportError('');
@@ -584,7 +621,7 @@ export function DataTable({
 
   return (
     <div className={`dt-container ${className}`.trim()}>
-      {(showSearch || showImageViewControl || showColumnControl || showLayoutControl || showExport) && <div className="dt-toolbar">
+      {(showSearch || showImageViewControl || showColumnControl || showLayoutControl || showExport || showViewMenu) && <div className="dt-toolbar">
         {showSearch && <label className="dt-search-label">
           <span className="dt-visually-hidden">{words.search}</span>
           <input className="dt-control dt-search" type="search" value={search ?? ''}
@@ -612,6 +649,13 @@ export function DataTable({
           visibleFields={preferenceVisibleFields} onMove={moveColumn} onToggle={toggleColumn}
           onReset={resetColumns} orderReadOnly={orderReadOnly}
           visibilityReadOnly={visibilityReadOnly} labels={words} />}
+        {showViewMenu && <ViewMenu savedViews={savedViews} currentView={currentView}
+          isCurrent={(saved) => viewsEqual(normalizeView(saved, columns, viewOptions), currentView)}
+          canSave={Boolean(viewsKey)} canShare={linksEnabled}
+          onSave={(name, view) => updateSavedViews(upsertSavedView(savedViews, name, view))}
+          onApply={(saved) => applyView(saved.view)}
+          onDelete={(id) => updateSavedViews(savedViews.filter((saved) => saved.id !== id))}
+          onCopyLink={copyViewLink} labels={words} />}
         {showExport && <button type="button" className="dt-button" onClick={exportCsv}
           disabled={loading || exporting || (csvExport.scope === 'selected' && selected.length === 0)}>
           <ActionIcon name="download" />{exporting ? words.exportingCsv : words.exportCsv}
