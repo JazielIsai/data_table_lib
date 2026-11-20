@@ -122,6 +122,17 @@ export interface TableLabels {
   exportError?: string;
   resizeColumn?: (header: string) => string;
 }
+export interface TableView {
+  search?: string;
+  filters?: Record<string, string>;
+  sort?: TableSort | null;
+  columnOrder?: string[];
+  columnVisibility?: Record<string, boolean>;
+  columnWidths?: Record<string, number>;
+  layout?: TableLayout;
+  imageView?: TableImageView;
+}
+export interface TableSavedView { id: string; name: string; view: TableView; createdAt: string }
 export interface TableCsvExport<Row extends TableRow = TableRow> {
   filename?: string;
   scope?: 'filtered' | 'page' | 'selected';
@@ -219,3 +230,5 @@ export interface TableEditProps<Row extends TableRow = TableRow> extends BasePro
 export declare function Table<Row extends TableRow = TableRow>(props: TableProps<Row>): ReactNode;
 export declare function TableEdit<Row extends TableRow = TableRow>(props: TableEditProps<Row>): ReactNode;
 export declare function toCsv<Row extends TableRow>(rows: Row[], columns: TableColumn<Row>[]): string;
+export declare function encodeView(view: TableView): string;
+export declare function decodeView(text: string | null | undefined): TableView | null;

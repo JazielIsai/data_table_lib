@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { JSDOM } from 'jsdom';
 import { filterRows, sortRows, paginateRows } from '../src/rowModel.js';
 import { toCsv } from '../src/csv.js';
+import { decodeView, encodeView, normalizeView } from '../src/viewState.js';
 import { Table as TableEsm, TableEdit as TableEditEsm, toCsv as toCsvEsm } from '../dist/index.js';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
@@ -584,4 +585,41 @@ test('loading and errors are announced', () => {
   assert.ok(screen.getByRole('status').textContent.includes('Cargando'));
   assert.equal(screen.queryByText('Ana'), null);
   assert.equal(screen.getByRole('table').getAttribute('aria-busy'), 'true');
+});
+
+test('views encode to url-safe text and decode back, including accents', () => {
+  const view = { search: 'café ñandú 🎉', filters: { team: 'Ventas' },
+    sort: { field: 'name', direction: 'desc' }, columnOrder: ['name', 'team'],
+    columnVisibility: { team: false }, columnWidths: { name: 200 },
+    layout: 'gallery', imageView: 'large' };
+  const text = encodeView(view);
+  assert.match(text, /^[A-Za-z0-9_-]+$/);
+  assert.deepEqual(decodeView(text), view);
+  assert.equal(encodeView({ search: '', filters: {}, sort: null }), encodeView({}));
+});
+
+test('invalid or future view links decode to null', () => {
+  for (const text of [undefined, '', '%%%', btoa('nope'), btoa('[1]'),
+    btoa(JSON.stringify({ v: 2, search: 'x' }))]) assert.equal(decodeView(text), null);
+});
+
+test('views are normalized against the current columns', () => {
+  const columns = [{ field: 'photo', type: 'image' },
+    { field: 'name', hideable: false, sortable: true, maxWidth: 300 },
+    { field: 'team', filterable: true }, { field: 'added' }];
+  const view = normalizeView({ columnOrder: ['gone', 'team', 'name'],
+    columnVisibility: { name: false, team: false, gone: false },
+    columnWidths: { name: 9999, team: 'x', gone: 100 },
+    sort: { field: 'team', direction: 'up' }, filters: { team: 'A', gone: 'B', name: 3 },
+    layout: 'gallery', imageView: 'huge' }, columns, { sortable: false, galleryAvailable: false });
+  assert.deepEqual(view.columnOrder, ['team', 'name', 'photo', 'added']);
+  assert.deepEqual(view.columnVisibility, { team: false });
+  assert.deepEqual(view.columnWidths, { name: 300 });
+  assert.equal(view.sort, null);
+  assert.deepEqual(view.filters, { team: 'A' });
+  assert.equal(view.layout, 'table');
+  assert.equal(view.imageView, undefined);
+  assert.equal(normalizeView({ columnVisibility: { photo: false, team: false, added: false } },
+    [{ field: 'photo' }, { field: 'team' }, { field: 'added' }],
+    { sortable: true, galleryAvailable: true }).columnVisibility, undefined);
 });
