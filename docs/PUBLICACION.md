@@ -5,7 +5,7 @@ La página del proyecto, un Release de GitHub y un paquete instalable son public
 | Destino | Qué ofrece | Estado inicial |
 | --- | --- | --- |
 | GitHub Pages | Sitio con documentación y ejemplos interactivos | Publicado en <https://jazielisai.github.io/data_table_lib/> |
-| GitHub Releases | Una versión identificada por un tag, notas y archivos descargables | `v0.1.0` y `v0.1.1` publicados; `v2.0.0-alpha.3` a `v2.0.0-alpha.5` como prereleases |
+| GitHub Releases | Una versión identificada por un tag, notas y archivos descargables | `v0.1.0` y `v0.1.1` publicados; `v2.0.0-alpha.3` a `v2.0.0-alpha.6` como prereleases |
 | GitHub Packages | Un paquete en el registro npm de GitHub | No se publica al crear un release |
 | npmjs.com | Paquete que se instala con `npm install` | `latest`: `0.1.2`; `next`: `2.0.0-alpha.5`. |
 
@@ -26,6 +26,8 @@ La vista previa [v2.0.0-alpha.3](https://github.com/JazielIsai/data_table_lib/re
 La vista previa [v2.0.0-alpha.4](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.4) incluye columnas ajustables y exportación CSV. Su paquete `.tgz` está adjunto al Release y también está publicada en npm con la etiqueta `next`.
 
 La vista previa [v2.0.0-alpha.5](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.5) añade columnas fijadas y exportación remota asíncrona. Está en GitHub con un `.tgz` descargable y en npm con la etiqueta `next`. Publica cada versión desde su paquete `.tgz` correspondiente.
+
+La vista previa [v2.0.0-alpha.6](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.6) añade la presentación visual, ejemplos de catálogo, directorio y datos remotos, y metadatos para encontrar el paquete. Su `.tgz` está adjunto al Release; la publicación en npm requiere completar la autenticación de un solo uso antes de que `next` cambie de `alpha.5` a `alpha.6`.
 
 Antes de publicar una nueva versión, ejecuta `npm test`, `npm run build:site` y `npm pack --dry-run`. Confirma que la versión de `package.json` coincide con el tag del nuevo release.
 
