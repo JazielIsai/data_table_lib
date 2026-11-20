@@ -42,7 +42,7 @@ jobs:
         run: |
           version="$(node -p "require('./package.json').version")"
           if [[ "$version" == *-* ]]; then
-            npm publish --access public --tag next --loglevel verbose
+            npm publish --access public --tag next
           else
-            npm publish --access public --tag latest --loglevel verbose
+            npm publish --access public --tag latest
           fi
