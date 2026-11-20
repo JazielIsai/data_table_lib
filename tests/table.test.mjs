@@ -762,3 +762,49 @@ test('syncViewToUrl replaces the url after a pause and reapplies on popstate', a
   window.history.pushState = originalPush;
   window.history.replaceState(null, '', '/');
 });
+
+test('the manual link field does not steal focus while the viewer keeps typing', async () => {
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+  render(h(Table, { columns: [{ field: 'name' }], rows: [], searchable: true, shareableViews: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Copiar enlace' }));
+  await screen.findByRole('textbox', { name: 'Copia este enlace' });
+  const search = screen.getByRole('searchbox');
+  search.focus();
+  fireEvent.change(search, { target: { value: 'ana' } });
+  assert.ok(document.activeElement === search, 'focus stays in the search box');
+});
+
+test('saved views follow a change of viewsKey without overwriting the other list', () => {
+  saveSavedViews('views-a', upsertSavedView([], 'A', { search: 'a' }));
+  saveSavedViews('views-b', upsertSavedView([], 'B', { search: 'b' }));
+  const props = { columns: [{ field: 'name' }], rows: [], searchable: true };
+  const { rerender } = render(h(Table, { ...props, viewsKey: 'views-a' }));
+  rerender(h(Table, { ...props, viewsKey: 'views-b' }));
+  assert.ok(screen.queryByRole('button', { name: 'Aplicar B' }), 'shows B views');
+  fireEvent.change(screen.getByRole('textbox', { name: 'Nombre de la vista' }), { target: { value: 'Nueva' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar vista' }));
+  assert.deepEqual(loadSavedViews('views-b').map((v) => v.name), ['B', 'Nueva']);
+  assert.deepEqual(loadSavedViews('views-a').map((v) => v.name), ['A']);
+  window.localStorage.removeItem('views-a');
+  window.localStorage.removeItem('views-b');
+});
+
+test('view links leave the rest of the query string exactly as written', () => {
+  const href = 'http://x.test/a?q=a%20b&flag&view=list#h';
+  assert.equal(withViewParam(href, 'view', null), href);
+  assert.equal(withViewParam(href, 'view', encodeView({})), href);
+  const plain = 'http://x.test/a?q=a%20b&flag#h';
+  const set = withViewParam(plain, 'view', encodeView({ search: 'x' }));
+  assert.equal(set, `http://x.test/a?q=a%20b&flag&view=${encodeView({ search: 'x' })}#h`);
+  assert.equal(withViewParam(set, 'view', null), plain);
+});
+
+test('a link only reports the fields it carries', () => {
+  window.history.replaceState(null, '', '/?view=' + encodeView({ search: 'ana' }));
+  const calls = [];
+  render(h(Table, { columns: [{ field: 'name', sortable: true }], rows: [], searchable: true,
+    shareableViews: true, onSearchChange: (v) => calls.push('search'), onSortChange: () => calls.push('sort'),
+    onColumnWidthsChange: () => calls.push('widths'), onLayoutChange: () => calls.push('layout') }));
+  assert.deepEqual(calls, ['search']);
+  window.history.replaceState(null, '', '/');
+});

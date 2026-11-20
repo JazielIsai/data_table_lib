@@ -174,7 +174,8 @@ export function DataTable({
   const [initialView] = useState(() => {
     const fromUrl = linksEnabled ? readViewParam(viewParam) : null;
     const source = fromUrl ? { ...baseView, ...fromUrl } : defaultView;
-    return source ? { view: normalizeView(source, columns, viewOptions), fromUrl: Boolean(fromUrl) } : null;
+    return source ? { view: normalizeView(source, columns, viewOptions), fromUrl: Boolean(fromUrl),
+      carried: new Set(Object.keys(fromUrl ?? defaultView)) } : null;
   });
   const seed = initialView?.view ?? {};
   const [localSort, setLocalSort] = useState(seed.sort ?? null);
@@ -206,7 +207,8 @@ export function DataTable({
   const [dragWidths, setDragWidths] = useState({});
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
-  const [savedViews, setSavedViews] = useState(() => loadSavedViews(viewsKey));
+  const [storedViews, setStoredViews] = useState(() => ({ key: viewsKey, views: loadSavedViews(viewsKey) }));
+  const savedViews = storedViews.key === viewsKey ? storedViews.views : loadSavedViews(viewsKey);
   const resizeCleanup = useRef(null);
   const viewBatch = useRef(null);
   const initialViewAnnounced = useRef(false);
@@ -513,7 +515,7 @@ export function DataTable({
     }
   };
   const updateSavedViews = (next) => {
-    setSavedViews(next);
+    setStoredViews({ key: viewsKey, views: next });
     saveSavedViews(viewsKey, next);
   };
   const exportCsv = async () => {
@@ -631,7 +633,7 @@ export function DataTable({
       ['columnWidths', controlledColumnWidths, onColumnWidthsChange]
     ];
     for (const [key, controlled, callback] of report) {
-      if (key in seeded && callback && (controlled === undefined || !sameValue(controlled, seeded[key]))) {
+      if (key in seeded && initialView.carried.has(key) && callback && (controlled === undefined || !sameValue(controlled, seeded[key]))) {
         callback(seeded[key]);
       }
     }

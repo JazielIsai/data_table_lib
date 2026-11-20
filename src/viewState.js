@@ -149,10 +149,33 @@ export function readViewParam(param, href) {
   }
 }
 
-/** Sets or removes the view parameter while keeping the rest of the URL intact. */
+const paramName = (pair) => {
+  try {
+    return decodeURIComponent(pair.split('=')[0].replace(/\+/g, ' '));
+  } catch {
+    return null;
+  }
+};
+const paramValue = (pair) => {
+  try {
+    return decodeURIComponent((pair.split('=')[1] ?? '').replace(/\+/g, ' '));
+  } catch {
+    return '';
+  }
+};
+
+/**
+ * Sets or removes the view parameter while keeping the rest of the URL exactly as written.
+ * A parameter with the same name that is not a view (an app's own ?view=list) is left alone.
+ */
 export function withViewParam(href, param, encoded) {
   const url = new URL(href);
-  if (!encoded || encoded === encodeView({})) url.searchParams.delete(param);
-  else url.searchParams.set(param, encoded);
+  const pairs = url.search.replace(/^\?/, '').split('&').filter(Boolean);
+  const isOurs = (pair) => paramName(pair) === param && decodeView(paramValue(pair)) !== null;
+  const empty = !encoded || encoded === encodeView({});
+  if (empty && !pairs.some(isOurs)) return href;
+  const kept = pairs.filter((pair) => !isOurs(pair) && !(paramName(pair) === param && !empty));
+  if (!empty) kept.push(`${encodeURIComponent(param)}=${encoded}`);
+  url.search = kept.length ? `?${kept.join('&')}` : '';
   return url.toString();
 }

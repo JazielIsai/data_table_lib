@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 function CopyLink({ onCopyLink, labels }) {
   const [status, setStatus] = useState('');
   const [manualLink, setManualLink] = useState('');
+  const manualField = useRef(null);
+  useEffect(() => {
+    if (manualLink) { manualField.current?.focus(); manualField.current?.select(); }
+  }, [manualLink]);
 
   const copy = async () => {
     setStatus('');
@@ -16,8 +20,7 @@ function CopyLink({ onCopyLink, labels }) {
     <span className="dt-view-status" role="status">{status}</span>
     {manualLink && <label className="dt-view-manual">
       <span>{labels.viewLinkManual}</span>
-      <input className="dt-control" type="text" readOnly value={manualLink}
-        ref={(node) => { if (node && document.activeElement !== node) { node.focus(); node.select(); } }} />
+      <input className="dt-control" type="text" readOnly value={manualLink} ref={manualField} />
     </label>}
   </div>;
 }
