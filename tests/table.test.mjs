@@ -734,3 +734,31 @@ test('copy link writes the current view and falls back to a visible field', asyn
   assert.equal(window.location.search, '?tab=2');
   window.history.replaceState(null, '', '/');
 });
+
+test('syncViewToUrl replaces the url after a pause and reapplies on popstate', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  window.history.replaceState(null, '', '/app?tab=2#top');
+  const pushes = [];
+  const originalPush = window.history.pushState;
+  window.history.pushState = (...args) => pushes.push(args);
+  const { unmount } = render(h(Table, { columns: [{ field: 'name' }], rows: [], searchable: true,
+    syncViewToUrl: true }));
+  const before = window.history.length;
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'ana' } });
+  assert.equal(readViewParam('view'), null);
+  t.mock.timers.tick(300);
+  assert.deepEqual(readViewParam('view'), { search: 'ana' });
+  assert.equal(new URL(window.location.href).searchParams.get('tab'), '2');
+  assert.equal(window.location.hash, '#top');
+  assert.equal(window.history.length, before);
+  assert.equal(pushes.length, 0);
+  window.history.replaceState(null, '', '/app?view=' + encodeView({ search: 'luis' }));
+  fireEvent(window, new window.PopStateEvent('popstate'));
+  assert.equal(screen.getByRole('searchbox').value, 'luis');
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'pendiente' } });
+  unmount();
+  t.mock.timers.tick(300);
+  assert.deepEqual(readViewParam('view'), { search: 'luis' });
+  window.history.pushState = originalPush;
+  window.history.replaceState(null, '', '/');
+});

@@ -210,6 +210,7 @@ export function DataTable({
   const resizeCleanup = useRef(null);
   const viewBatch = useRef(null);
   const initialViewAnnounced = useRef(false);
+  const latestApplyView = useRef(null);
   const errorPrefix = useId().replace(/:/g, '');
 
   useEffect(() => {
@@ -499,11 +500,9 @@ export function DataTable({
       if (Object.keys(patch).length) onViewChange?.({ ...currentView, ...patch });
     }
   };
-  const viewLink = () => {
-    const changes = Object.fromEntries(Object.entries(currentView)
-      .filter(([key, value]) => !sameValue(value, baseView[key])));
-    return withViewParam(window.location.href, viewParam, encodeView(changes));
-  };
+  const encodedViewChanges = () => encodeView(Object.fromEntries(Object.entries(currentView)
+    .filter(([key, value]) => !sameValue(value, baseView[key]))));
+  const viewLink = () => withViewParam(window.location.href, viewParam, encodedViewChanges());
   const copyViewLink = async () => {
     const href = viewLink();
     try {
@@ -598,6 +597,26 @@ export function DataTable({
     }
   };
 
+  latestApplyView.current = () => applyView({ ...baseView, ...(readViewParam(viewParam) ?? {}) });
+  const syncedView = syncViewToUrl ? encodedViewChanges() : null;
+  useEffect(() => {
+    if (!syncedView || typeof window === 'undefined') return undefined;
+    const timer = setTimeout(() => {
+      try {
+        const next = withViewParam(window.location.href, viewParam, syncedView);
+        if (next !== window.location.href) window.history.replaceState(window.history.state, '', next);
+      } catch {
+        // Some embedded browsers forbid history changes; the table keeps working.
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [syncedView, viewParam]);
+  useEffect(() => {
+    if (!syncViewToUrl || typeof window === 'undefined') return undefined;
+    const onPopState = () => latestApplyView.current?.();
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [syncViewToUrl]);
   useEffect(() => {
     // A shared link or defaultView seeded local state; tell the app so remote data can follow.
     if (!initialView || initialViewAnnounced.current) return;
