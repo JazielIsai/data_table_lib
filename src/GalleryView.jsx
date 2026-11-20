@@ -6,8 +6,8 @@ export function GalleryView({ caption, rows, imageColumn, titleField, descriptio
   sortReadOnly, filterReadOnly,
   onTogglePage, selectedPageCount, gallery, loading, loadingMessage, emptyMessage, labels }) {
   const title = typeof caption === 'string' ? caption : labels.gallery;
-  const aspectRatio = ['square', 'landscape', 'portrait'].includes(gallery.aspectRatio)
-    ? gallery.aspectRatio : 'landscape';
+  const aspectRatio = ['auto', 'square', 'landscape', 'portrait'].includes(gallery.aspectRatio)
+    ? gallery.aspectRatio : 'auto';
   const cardSize = gallery.cardSize === 'compact' ? 'compact' : 'comfortable';
   const hasControls = sortColumns.length > 0 || filterColumns.length > 0 || selectable;
 
@@ -46,7 +46,7 @@ export function GalleryView({ caption, rows, imageColumn, titleField, descriptio
     </div>}
     {loading ? <div className="dt-message" role="status">{loadingMessage}</div>
       : rows.length === 0 ? <div className="dt-message dt-gallery-empty">{emptyMessage}</div>
-      : <ul className={`dt-gallery-grid dt-gallery-grid-${cardSize}`}>
+      : <ul className={`dt-gallery-grid dt-gallery-grid-${cardSize} dt-gallery-grid-${aspectRatio}`}>
         {rows.map((row, index) => {
           const id = getRowId(row, index);
           const key = String(id);

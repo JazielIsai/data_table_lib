@@ -13,6 +13,7 @@ import luisPhoto from '../examples/assets/luis.jpg';
 import martaPhoto from '../examples/assets/marta.jpg';
 import '@isai_dev/data_table_lib/style.css';
 import './style.css';
+import ReadmeDocs from './ReadmeDocs.jsx';
 
 const repository = 'https://github.com/JazielIsai/data_table_lib';
 
@@ -220,6 +221,8 @@ function CopyButton({ value }) {
 }
 
 function App() {
+  const docsPage = new URLSearchParams(window.location.search).get('page') === 'docs'
+    || (window.location.hash && !['#inicio', '#capacidades', '#demo', '#instalacion'].includes(window.location.hash));
   const [activeId, setActiveId] = useState(() =>
     new URLSearchParams(window.location.search).has('view') ? 'views' : 'products');
   const active = demos.find((demo) => demo.id === activeId);
@@ -227,19 +230,21 @@ function App() {
 
   return <>
     <header className="site-header">
-      <a className="brand" href="#inicio" aria-label="Data Table Lib, inicio">
+      <a className="brand" href="./#inicio" aria-label="Data Table Lib, inicio">
         <span className="brand-mark" aria-hidden="true"><i /><i /><i /><i /></span>
         <span>Data Table Lib</span>
       </a>
       <nav aria-label="Navegación principal">
-        <a href="#capacidades">Capacidades</a>
-        <a href="#demo">Demo</a>
-        <a href="#instalacion">Instalación</a>
+        <a href="./#inicio">Inicio</a>
+        <a href="./#demo">Demo</a>
+        <a href="./#instalacion">Instalación</a>
+        <a href="?page=docs#instalar-y-ejecutar" aria-current={docsPage ? 'page' : undefined}>Documentación</a>
         <a className="nav-github" href={repository} target="_blank" rel="noreferrer">GitHub</a>
       </nav>
     </header>
 
     <main id="inicio">
+      {!docsPage && <>
       <section className="hero" aria-labelledby="hero-title">
         <div className="hero-copy">
           <p className="eyebrow"><span className="eyebrow-line" /> Una librería para React</p>
@@ -326,7 +331,7 @@ function App() {
           <h2 id="install-title">Instálala y úsala en tu proyecto.</h2>
           <p>Disponible en npm como <code>@isai_dev/data_table_lib</code>. Añade los componentes y estilos a tu aplicación con React 18 o 19.</p>
           <p>La demo usa el código de desarrollo de v2. La etiqueta <code>next</code> instala la última versión preliminar publicada en npm; puede ir detrás de esta demo hasta la próxima publicación. La versión estable sigue en <code>latest</code>.</p>
-          <a href={`${repository}#instalar-y-ejecutar`} target="_blank" rel="noreferrer">Leer la documentación completa</a>
+          <a href="?page=docs#instalar-y-ejecutar">Leer la documentación completa</a>
         </div>
         <div className="terminal">
           <div className="terminal-heading"><span>Versión estable</span><CopyButton value="npm install @isai_dev/data_table_lib" /></div>
@@ -336,6 +341,8 @@ function App() {
           <p>Importa también <code>@isai_dev/data_table_lib/style.css</code>.</p>
         </div>
       </section>
+      </>}
+      {docsPage && <ReadmeDocs />}
     </main>
     <footer>
       <span>Data Table Lib</span>

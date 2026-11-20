@@ -88,7 +88,7 @@ const rows = [{ id: 1, name: 'Ana', team: 'Diseño', photo: {
   defaultLayout="gallery" allowLayoutChange
   layoutPreferencesKey="mi-tabla-vista"
   gallery={{ imageField: 'photo', titleField: 'name',
-    descriptionField: 'team', aspectRatio: 'square' }}
+    descriptionField: 'team' }}
   imageView={imageView} onImageViewChange={setImageView}
   allowImageViewChange searchable selectable
   bulkActions={[{ label: 'Ver selección',
@@ -105,7 +105,7 @@ Los valores de imagen sin URL o con error de carga muestran `imageFallback` (por
 
 Cuando las imágenes son el contenido principal, `defaultLayout="gallery"` muestra tarjetas con una foto grande y texto breve, siguiendo la [recomendación de Apple para colecciones con muchas imágenes](https://developer.apple.com/design/human-interface-guidelines/lists-and-tables). `allowLayoutChange` añade los botones **Tabla** y **Galería**. `layout` / `onLayoutChange` controlan la presentación desde la aplicación; `layoutPreferencesKey` guarda la elección en `localStorage` con una clave distinta de `columnPreferencesKey`.
 
-`gallery.imageField` elige la columna de imagen; `titleField` y `descriptionField` eligen el texto. Si se omiten, se usa la primera columna de imagen y la primera columna de texto visible. `aspectRatio` acepta `landscape` (4:3), `square` (1:1) y `portrait` (3:4); `cardSize` acepta `comfortable` o `compact`. `renderDetails(row, rowIndex)` añade contenido personalizado debajo del texto. La galería permite ordenar columnas `sortable` y filtrar columnas `filterable`, además de usar búsqueda, paginación, selección, acciones y visor de fotos. **Sin ordenar** llama `onSortChange(null)` cuando el orden es controlado. El tamaño de avatar o miniatura y la personalización de columnas sólo afectan a la tabla. `TableEdit` sigue usando la tabla para conservar los controles de edición.
+`gallery.imageField` elige la columna de imagen; `titleField` y `descriptionField` eligen el texto. Si se omiten, se usa la primera columna de imagen y la primera columna de texto visible. Por defecto, `aspectRatio: 'auto'` respeta la proporción original de cada foto: imágenes horizontales, verticales y cuadradas se muestran completas en la misma galería. Si prefieres tarjetas uniformes, usa `landscape` (4:3), `square` (1:1) o `portrait` (3:4); estos formatos pueden recortar la imagen según `imageFit`. `cardSize` acepta `comfortable` o `compact`. `renderDetails(row, rowIndex)` añade contenido personalizado debajo del texto. La galería permite ordenar columnas `sortable` y filtrar columnas `filterable`, además de usar búsqueda, paginación, selección, acciones y visor de fotos. **Sin ordenar** llama `onSortChange(null)` cuando el orden es controlado. El tamaño de avatar o miniatura y la personalización de columnas sólo afectan a la tabla. `TableEdit` sigue usando la tabla para conservar los controles de edición.
 
 `bulkActions` muestra una barra cuando hay filas seleccionadas, en tabla o galería. Cada acción recibe `(loadedRows, selectedIds, event)`: `selectedIds` contiene toda la selección, incluso IDs de otras páginas; `loadedRows` contiene sólo las filas presentes en `rows`. El botón **Limpiar selección** borra la selección mediante `onSelectionChange` si está controlada.
 
@@ -152,7 +152,7 @@ const [view, setView] = useState(() => decodeView(savedText) ?? {});
 
 ## Página de presentación
 
-`npm run site` abre la página de presentación local. `npm run build:site` genera el sitio estático en `site-dist/`, separado de `dist/` para no incluirlo en el paquete npm. El workflow [Publish site](./.github/workflows/pages.yml) publica esa salida en GitHub Pages al cambiar el sitio o la librería en `main`. La configuración de Pages del repositorio debe usar **GitHub Actions** como fuente de publicación.
+`npm run site` abre la página de presentación local. `npm run build:site` genera el sitio estático en `site-dist/`, separado de `dist/` para no incluirlo en el paquete npm. El workflow [Publish site](./.github/workflows/pages.yml) publica esa salida en GitHub Pages al cambiar el sitio, la librería o la documentación en `main`. La [documentación en la página](https://jazielisai.github.io/data_table_lib/?page=docs#instalar-y-ejecutar) muestra el README principal, el README de ejemplos y la guía de publicación directamente desde sus archivos Markdown. Tiene navegación lateral y presenta una sección a la vez. Los enlaces anteriores como `#instalar-y-ejecutar` siguen abriendo la sección correspondiente. La configuración de Pages del repositorio debe usar **GitHub Actions** como fuente de publicación.
 
 Consulta la [guía de publicación](./docs/PUBLICACION.md) para activar Pages y entender la diferencia entre Releases, GitHub Packages y npmjs.com.
 

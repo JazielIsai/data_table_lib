@@ -7,7 +7,8 @@ export interface TableGalleryOptions<Row extends TableRow = TableRow> {
   imageField?: string;
   titleField?: string;
   descriptionField?: string;
-  aspectRatio?: 'square' | 'landscape' | 'portrait';
+  /** auto (default) preserves each photo's natural ratio without cropping. */
+  aspectRatio?: 'auto' | 'square' | 'landscape' | 'portrait';
   cardSize?: 'compact' | 'comfortable';
   renderDetails?: (row: Row, rowIndex: number) => ReactNode;
 }

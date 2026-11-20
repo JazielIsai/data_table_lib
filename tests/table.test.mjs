@@ -407,6 +407,24 @@ test('gallery card options and responsive image sources are rendered', () => {
   assert.ok(screen.getByText('Perfil: Ana'));
 });
 
+test('gallery preserves mixed image proportions by default', () => {
+  render(React.createElement(Table, {
+    columns: [{ field: 'photo', type: 'image' }, { field: 'name' }],
+    rows: [
+      { id: 1, name: 'Horizontal', photo: { src: '/wide.jpg', width: 1200, height: 600 } },
+      { id: 2, name: 'Vertical', photo: { src: '/tall.jpg', width: 600, height: 1200 } }
+    ],
+    defaultLayout: 'gallery'
+  }));
+  const gallery = screen.getByRole('region', { name: 'Galería de fotos' });
+  assert.match(within(gallery).getByRole('list').className, /dt-gallery-grid-auto/);
+  const images = within(gallery).getAllByRole('img');
+  assert.deepEqual(images.map((image) => image.parentElement.className),
+    ['dt-gallery-media dt-gallery-media-auto', 'dt-gallery-media dt-gallery-media-auto']);
+  assert.deepEqual(images.map((image) => [image.getAttribute('width'), image.getAttribute('height')]),
+    [['1200', '600'], ['600', '1200']]);
+});
+
 test('renders headers, data, empty state and legacy props', () => {
   const html = renderToStaticMarkup(React.createElement(Table, {
     getColumns: [{ field: 'name', headerName: 'Name' }, { field: 'secret', hidden: true }],

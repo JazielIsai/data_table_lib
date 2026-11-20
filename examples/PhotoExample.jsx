@@ -29,7 +29,7 @@ export default function PhotoExample() {
       defaultLayout="gallery" allowLayoutChange
       layoutPreferencesKey="dt-demo-layout-v2"
       gallery={{ imageField: 'photo', titleField: 'name', descriptionField: 'team',
-        aspectRatio: 'square', renderDetails: (row) => `Perfil #${row.id}` }}
+        renderDetails: (row) => `Perfil #${row.id}` }}
       imageView={imageView} onImageViewChange={setImageView} allowImageViewChange
       allowColumnCustomization columnPreferencesKey="dt-demo-photos-v2"
       selectable selectedRowIds={selected} onSelectionChange={setSelected}

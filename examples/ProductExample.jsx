@@ -29,7 +29,7 @@ export default function ProductExample() {
     <Table caption="Catálogo de productos" columns={columns} rows={products}
       defaultLayout="gallery" allowLayoutChange
       gallery={{ imageField: 'photo', titleField: 'name', descriptionField: 'category',
-        aspectRatio: 'landscape', renderDetails: (row) =>
+        renderDetails: (row) =>
           <span>{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(row.price)} · {row.stock} disponibles</span> }}
       searchable sortable resizableColumns
       csvExport={{ filename: 'catalogo.csv', scope: 'filtered' }}
