@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img" aria-label="Cámara compacta azul">
+  <defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#eaf1ff"/><stop offset="1" stop-color="#cadcff"/></linearGradient><linearGradient id="c" x2="1" y2="1"><stop stop-color="#354f88"/><stop offset="1" stop-color="#172c59"/></linearGradient></defs>
+  <rect width="600" height="450" fill="url(#b)"/><ellipse cx="300" cy="369" rx="184" ry="27" fill="#8ca9da" opacity=".28"/>
+  <rect x="137" y="151" width="326" height="203" rx="34" fill="url(#c)"/><rect x="192" y="119" width="116" height="41" rx="12" fill="#304d83"/><rect x="405" y="170" width="33" height="19" rx="7" fill="#b9d0ff"/>
+  <circle cx="304" cy="253" r="88" fill="#0d2046" stroke="#8faee7" stroke-width="12"/><circle cx="304" cy="253" r="61" fill="#284f82" stroke="#d7e8ff" stroke-width="9"/><circle cx="304" cy="253" r="37" fill="#102743"/><circle cx="289" cy="236" r="15" fill="#a8d5ed" opacity=".65"/>
+</svg>

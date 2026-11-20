@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img" aria-label="Lámpara de escritorio naranja">
+  <defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#fff3e7"/><stop offset="1" stop-color="#ffd9b6"/></linearGradient><linearGradient id="l" x2="1" y2="1"><stop stop-color="#f38a54"/><stop offset="1" stop-color="#c6532b"/></linearGradient></defs>
+  <rect width="600" height="450" fill="url(#b)"/><ellipse cx="308" cy="375" rx="150" ry="25" fill="#da8f65" opacity=".25"/>
+  <path d="M301 330 235 204l125-74" fill="none" stroke="#793a32" stroke-width="23" stroke-linecap="round" stroke-linejoin="round"/><circle cx="235" cy="204" r="21" fill="#e67546"/><circle cx="358" cy="132" r="18" fill="#e67546"/>
+  <path d="m334 130 83-55 67 94-105 30z" fill="url(#l)"/><path d="m380 198 101-30" stroke="#a94126" stroke-width="9" stroke-linecap="round"/><path d="M301 330v38" stroke="#793a32" stroke-width="23" stroke-linecap="round"/><ellipse cx="301" cy="373" rx="86" ry="17" fill="#bc5c39"/>
+</svg>

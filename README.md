@@ -1,6 +1,27 @@
 # Data Table Lib
 
-Tablas React para mostrar, explorar, seleccionar y editar datos. Incluye `Table` y `TableEdit`, CSS independiente, tipos TypeScript y una demo.
+**Tablas React que también se convierten en galerías de fotos, con edición y preferencias listas para usar.**
+
+[![Vista visual de Data Table Lib: los mismos datos como tabla y galería](https://jazielisai.github.io/data_table_lib/social-preview.png)](https://jazielisai.github.io/data_table_lib/#demo)
+
+[Probar la demo](https://jazielisai.github.io/data_table_lib/#demo) · [Ver tres ejemplos completos](https://github.com/JazielIsai/data_table_lib/tree/main/examples) · [Instalar desde npm](https://www.npmjs.com/package/@isai_dev/data_table_lib)
+
+```bash
+npm install @isai_dev/data_table_lib@next
+```
+
+```jsx
+import { Table } from '@isai_dev/data_table_lib';
+import '@isai_dev/data_table_lib/style.css';
+const rows = [{ id: 1, name: 'Ana', photo: { src: '/ana.jpg', alt: 'Ana' } }];
+const columns = [{ field: 'photo', type: 'image' }, { field: 'name', headerName: 'Nombre' }];
+export default function App() {
+  return <Table rows={rows} columns={columns} allowLayoutChange
+    gallery={{ imageField: 'photo', titleField: 'name' }} />;
+}
+```
+
+Incluye `Table` y `TableEdit`, CSS independiente, tipos TypeScript y ejemplos con catálogo, directorio y datos remotos.
 
 Creada por [Jaziel Isaí](https://isai-dev.com).
 
@@ -44,7 +65,7 @@ También puedes instalar el archivo generado con `npm install /ruta/al/archivo.t
 
 ## Ejemplos ejecutables
 
-`npm run examples` compila la librería y sirve [cinco ejemplos independientes](./examples/README.md) en `http://localhost:5173/examples/`: tabla local, edición con validación, consulta simulada del servidor, fotos con acciones y vistas guardadas. Cada ejemplo importa las entradas públicas del paquete, igual que una aplicación consumidora.
+`npm run examples` compila la librería y sirve [seis ejemplos independientes](https://github.com/JazielIsai/data_table_lib/tree/main/examples) en `http://localhost:5173/examples/`: catálogo de productos, directorio con fotos, panel de datos remotos, tabla local, edición con validación y vistas guardadas. Cada ejemplo importa las entradas públicas del paquete, igual que una aplicación consumidora.
 
 ## Fotos, galería y acciones (vista previa de la versión 2)
 
