@@ -115,6 +115,25 @@
 .dt-column-toggle input:focus-visible { outline: 3px solid var(--dt-accent); outline-offset: 2px; }
 .dt-column-move { display: inline-flex; gap: 4px; }
 .dt-column-move .dt-button { min-height: 30px; width: 30px; padding: 0; }
+.dt-view-menu { position: relative; }
+.dt-view-menu summary { list-style: none; }
+.dt-view-menu summary::-webkit-details-marker { display: none; }
+.dt-view-menu summary:focus-visible { outline: 3px solid var(--dt-accent); outline-offset: 2px; }
+.dt-view-panel { position: absolute; z-index: 5; top: calc(100% + 8px); right: 0; display: grid; gap: 10px; box-sizing: border-box; width: min(90vw, 320px); padding: 12px; border: 1px solid var(--dt-separator); border-radius: 10px; background: var(--dt-surface); color: var(--dt-text); box-shadow: 0 10px 30px #0003; }
+.dt-view-panel ul { margin: 0; padding: 0; list-style: none; }
+.dt-view-panel li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid var(--dt-separator); }
+.dt-view-panel li .dt-button { min-height: 30px; width: 30px; padding: 0; }
+.dt-view-apply { flex: 1; min-width: 0; overflow: hidden; border: 0; background: none; color: inherit; font: inherit; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.dt-view-apply[aria-current="true"] { color: var(--dt-accent); font-weight: 600; }
+.dt-view-apply:focus-visible { outline: 3px solid var(--dt-accent); outline-offset: 2px; }
+.dt-view-empty { margin: 0; opacity: .75; }
+.dt-view-save { display: flex; gap: 8px; }
+.dt-view-save label { flex: 1; min-width: 0; }
+.dt-view-save .dt-control { width: 100%; box-sizing: border-box; }
+.dt-view-share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.dt-view-status:empty { display: none; }
+.dt-view-manual { display: grid; gap: 4px; width: 100%; }
+.dt-view-manual .dt-control { width: 100%; box-sizing: border-box; }
 .dt-action-symbol { display: inline-flex; align-items: center; justify-content: center; }
 .dt-action-icon { display: block; flex: none; }
 .dt-icon-only { width: 36px; padding-inline: 0; }
@@ -153,6 +172,8 @@
   .dt-gallery-sort, .dt-gallery-filter { flex: 1 1 100%; }
   .dt-gallery-sort label { flex: 1; }
   .dt-column-controls { width: 100%; }
+  .dt-view-menu, .dt-view-menu summary { width: 100%; }
+  .dt-view-panel { left: 0; right: auto; }
   .dt-column-controls summary { width: 100%; }
 }
 @media (prefers-color-scheme: dark) {

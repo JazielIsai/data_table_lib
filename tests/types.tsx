@@ -1,4 +1,4 @@
-import { Table, TableEdit, toCsv, type TableColumn, type TableSort } from '@isai_dev/data_table_lib';
+import { Table, TableEdit, toCsv, encodeView, decodeView, type TableColumn, type TableSort, type TableView } from '@isai_dev/data_table_lib';
 
 interface Person { id: number; name: string; role: string; photo?: { src: string; alt: string } }
 const people: Person[] = [{ id: 1, name: 'Ana', role: 'admin',
@@ -46,4 +46,15 @@ export const examples = <>
     } }]} />
   <TableEdit columns={columns} rows={people} editMode="save"
     onSave={async (draft, original) => { draft.name; original.id; }} />
+</>;
+
+const sharedView: TableView = { search: 'Ana', sort, layout: 'gallery', imageView: 'large' };
+const encodedView: string = encodeView(sharedView);
+const decodedView: TableView | null = decodeView(encodedView);
+decodedView?.columnWidths;
+export const viewExamples = <>
+  <Table columns={columns} rows={people} view={sharedView}
+    onViewChange={(next: TableView) => { next.search; }} viewsKey="people-views"
+    shareableViews={{ param: 'v' }} syncViewToUrl />
+  <TableEdit columns={columns} rows={people} defaultView={{ search: 'Ana' }} shareableViews />
 </>;

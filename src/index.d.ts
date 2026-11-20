@@ -121,7 +121,28 @@ export interface TableLabels {
   exportingCsv?: string;
   exportError?: string;
   resizeColumn?: (header: string) => string;
+  views?: string;
+  savedViews?: string;
+  noSavedViews?: string;
+  viewName?: string;
+  saveView?: string;
+  applyView?: (name: string) => string;
+  deleteView?: (name: string) => string;
+  copyViewLink?: string;
+  viewLinkCopied?: string;
+  viewLinkManual?: string;
 }
+export interface TableView {
+  search?: string;
+  filters?: Record<string, string>;
+  sort?: TableSort | null;
+  columnOrder?: string[];
+  columnVisibility?: Record<string, boolean>;
+  columnWidths?: Record<string, number>;
+  layout?: TableLayout;
+  imageView?: TableImageView;
+}
+export interface TableSavedView { id: string; name: string; view: TableView; createdAt: string }
 export interface TableCsvExport<Row extends TableRow = TableRow> {
   filename?: string;
   scope?: 'filtered' | 'page' | 'selected';
@@ -185,6 +206,18 @@ interface BaseProps<Row extends TableRow> {
   onColumnWidthsChange?: (widths: Record<string, number>) => void;
   pinActions?: boolean;
   csvExport?: TableCsvExport<Row>;
+  /** Controlled view. Each field feeds the matching piece unless that piece has its own controlled prop. */
+  view?: TableView;
+  /** Initial view for uncontrolled state. */
+  defaultView?: TableView;
+  /** Receives the whole view after any change: from the viewer, a saved view or a shared link. */
+  onViewChange?: (view: TableView) => void;
+  /** localStorage key for named views. Shows the Views menu. */
+  viewsKey?: string;
+  /** Adds "copy link" and applies a view link when the table mounts. */
+  shareableViews?: boolean | { param?: string };
+  /** Keeps the view in the URL with history.replaceState. Off by default; routers may rewrite the URL. */
+  syncViewToUrl?: boolean;
   loading?: boolean;
   error?: ReactNode;
   loadingMessage?: ReactNode;
@@ -219,3 +252,5 @@ export interface TableEditProps<Row extends TableRow = TableRow> extends BasePro
 export declare function Table<Row extends TableRow = TableRow>(props: TableProps<Row>): ReactNode;
 export declare function TableEdit<Row extends TableRow = TableRow>(props: TableEditProps<Row>): ReactNode;
 export declare function toCsv<Row extends TableRow>(rows: Row[], columns: TableColumn<Row>[]): string;
+export declare function encodeView(view: TableView): string;
+export declare function decodeView(text: string | null | undefined): TableView | null;

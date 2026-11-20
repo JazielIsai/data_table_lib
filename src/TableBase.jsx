@@ -8,6 +8,9 @@ import { GalleryView } from './GalleryView.jsx';
 import { loadColumnPreferences, normalizeColumnOrder, saveColumnPreferences } from './columnState.js';
 import { loadLayoutPreference, saveLayoutPreference } from './layoutState.js';
 import { downloadBlob, downloadCsv, toCsv } from './csv.js';
+import { encodeView, loadSavedViews, normalizeView, readViewParam, saveSavedViews,
+  upsertSavedView, viewsEqual, withViewParam } from './viewState.js';
+import { ViewMenu } from './ViewMenu.jsx';
 
 const defaultId = (row, index) => row?.id ?? index;
 const initialPage = { pageIndex: 0, pageSize: 10 };
@@ -98,6 +101,8 @@ export function DataTable({
   csvExport,
   defaultLayout = 'table', layout: controlledLayout, onLayoutChange,
   allowLayoutChange = false, layoutPreferencesKey, gallery = {},
+  view: controlledView, defaultView, onViewChange, viewsKey,
+  shareableViews = false, syncViewToUrl = false,
   loading = false, error, loadingMessage = 'Cargando…',
   editMode = 'immediate', onSave, onCancel,
   previousLabel = 'Anterior', nextLabel = 'Siguiente',
@@ -140,25 +145,57 @@ export function DataTable({
     exportingCsv: 'Exportando…',
     exportError: 'No se pudo exportar el CSV',
     resizeColumn: (header) => `Cambiar ancho de ${header}`,
+    views: 'Vistas',
+    savedViews: 'Vistas guardadas',
+    noSavedViews: 'Aún no hay vistas guardadas',
+    viewName: 'Nombre de la vista',
+    saveView: 'Guardar vista',
+    applyView: (name) => `Aplicar ${name}`,
+    deleteView: (name) => `Eliminar ${name}`,
+    copyViewLink: 'Copiar enlace',
+    viewLinkCopied: 'Enlace copiado',
+    viewLinkManual: 'Copia este enlace',
     ...labels
   };
-  const [localSort, setLocalSort] = useState(null);
-  const [localSearch, setLocalSearch] = useState('');
-  const [localFilters, setLocalFilters] = useState({});
-  const [localPagination, setLocalPagination] = useState(initialPage);
-  const [localSelected, setLocalSelected] = useState([]);
-  const [localImageView, setLocalImageView] = useState(defaultImageView);
-  const [storedLayout, setStoredLayout] = useState(() =>
-    loadLayoutPreference(layoutPreferencesKey, defaultLayout));
-  const localLayout = storedLayout.key === layoutPreferencesKey
-    ? storedLayout.layout : loadLayoutPreference(layoutPreferencesKey, defaultLayout).layout;
+  const linksEnabled = Boolean(shareableViews) || Boolean(syncViewToUrl);
+  const viewParam = (typeof shareableViews === 'object' && shareableViews?.param) || 'view';
+  const viewOptions = { sortable,
+    galleryAvailable: !editable && columns.some((column) => column.type === 'image' && !column.hidden) };
   const columnDefaults = {
     order: defaultColumnOrder ?? columns.map((column) => column.field),
     visibility: defaultColumnVisibility ?? {},
     widths: defaultColumnWidths ?? {}
   };
-  const [storedColumns, setStoredColumns] = useState(() =>
-    loadColumnPreferences(columnPreferencesKey, columnDefaults));
+  // What a view looks like before anyone changes it; links store only the differences.
+  const baseView = { search: '', filters: {}, sort: null,
+    columnOrder: normalizeColumnOrder(columnDefaults.order, columns),
+    columnVisibility: columnDefaults.visibility, columnWidths: columnDefaults.widths,
+    layout: defaultLayout, imageView: defaultImageView };
+  const [initialView] = useState(() => {
+    const fromUrl = linksEnabled ? readViewParam(viewParam) : null;
+    const source = fromUrl ? { ...baseView, ...fromUrl } : defaultView;
+    return source ? { view: normalizeView(source, columns, viewOptions), fromUrl: Boolean(fromUrl),
+      carried: new Set(Object.keys(fromUrl ?? defaultView)) } : null;
+  });
+  const seed = initialView?.view ?? {};
+  const [localSort, setLocalSort] = useState(seed.sort ?? null);
+  const [localSearch, setLocalSearch] = useState(seed.search ?? '');
+  const [localFilters, setLocalFilters] = useState(seed.filters ?? {});
+  const [localPagination, setLocalPagination] = useState(initialPage);
+  const [localSelected, setLocalSelected] = useState([]);
+  const [localImageView, setLocalImageView] = useState(seed.imageView ?? defaultImageView);
+  const [storedLayout, setStoredLayout] = useState(() => seed.layout
+    ? { key: layoutPreferencesKey, layout: seed.layout }
+    : loadLayoutPreference(layoutPreferencesKey, defaultLayout));
+  const localLayout = storedLayout.key === layoutPreferencesKey
+    ? storedLayout.layout : loadLayoutPreference(layoutPreferencesKey, defaultLayout).layout;
+  const [storedColumns, setStoredColumns] = useState(() => {
+    const saved = loadColumnPreferences(columnPreferencesKey, columnDefaults);
+    return { ...saved,
+      order: seed.columnOrder ?? saved.order,
+      visibility: seed.columnVisibility ?? saved.visibility,
+      widths: seed.columnWidths ?? saved.widths };
+  });
   const localColumns = storedColumns.key === columnPreferencesKey
     ? storedColumns : loadColumnPreferences(columnPreferencesKey, columnDefaults);
   const [imagePreview, setImagePreview] = useState(null);
@@ -170,7 +207,12 @@ export function DataTable({
   const [dragWidths, setDragWidths] = useState({});
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
+  const [storedViews, setStoredViews] = useState(() => ({ key: viewsKey, views: loadSavedViews(viewsKey) }));
+  const savedViews = storedViews.key === viewsKey ? storedViews.views : loadSavedViews(viewsKey);
   const resizeCleanup = useRef(null);
+  const viewBatch = useRef(null);
+  const initialViewAnnounced = useRef(false);
+  const latestApplyView = useRef(null);
   const errorPrefix = useId().replace(/:/g, '');
 
   useEffect(() => {
@@ -183,16 +225,20 @@ export function DataTable({
   }, [layoutPreferencesKey, storedLayout.key]);
   useEffect(() => () => resizeCleanup.current?.(), []);
 
-  const sort = controlledSort !== undefined ? controlledSort : localSort;
-  const search = controlledSearch !== undefined ? controlledSearch : localSearch;
-  const filters = controlledFilters !== undefined ? controlledFilters : localFilters;
+  const fromView = (key, local) => controlledView?.[key] !== undefined ? controlledView[key] : local;
+  const sort = controlledSort !== undefined ? controlledSort : fromView('sort', localSort);
+  const search = controlledSearch !== undefined ? controlledSearch : fromView('search', localSearch);
+  const filters = controlledFilters !== undefined ? controlledFilters : fromView('filters', localFilters);
   const pagination = controlledPagination ?? localPagination;
   const selected = controlledSelected !== undefined ? controlledSelected : localSelected;
-  const imageView = controlledImageView ?? localImageView;
-  const requestedLayout = controlledLayout ?? localLayout;
-  const columnOrder = normalizeColumnOrder(controlledColumnOrder ?? localColumns.order, columns);
-  const columnVisibility = controlledColumnVisibility ?? localColumns.visibility;
-  const columnWidths = controlledColumnWidths ?? localColumns.widths ?? {};
+  const imageView = controlledImageView ?? fromView('imageView', localImageView);
+  const requestedLayout = controlledLayout ?? fromView('layout', localLayout);
+  const columnOrder = normalizeColumnOrder(controlledColumnOrder
+    ?? fromView('columnOrder', localColumns.order), columns);
+  const columnVisibility = controlledColumnVisibility
+    ?? fromView('columnVisibility', localColumns.visibility);
+  const columnWidths = controlledColumnWidths
+    ?? fromView('columnWidths', localColumns.widths) ?? {};
   const columnByField = new Map(columns.map((column) => [column.field, column]));
   const preferredColumns = columnOrder.map((field) => columnByField.get(field));
   const orderedColumns = [
@@ -248,6 +294,7 @@ export function DataTable({
   const widthsReadOnly = controlledColumnWidths !== undefined && !onColumnWidthsChange;
   const showPagination = paginationEnabled || controlledPagination !== undefined;
   const showExport = Boolean(csvExport);
+  const showViewMenu = Boolean(viewsKey) || linksEnabled;
   const colSpan = visibleColumns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0);
 
   const processedRows = useMemo(() => {
@@ -276,6 +323,12 @@ export function DataTable({
   const pageIds = pageRows.map((row, index) => getRowId(row, index));
   const selectedPageCount = pageIds.filter((id) => selectedSet.has(String(id))).length;
 
+  const currentView = { search: search ?? '', filters: filters ?? {}, sort: sort ?? null,
+    columnOrder, columnVisibility, columnWidths, layout, imageView };
+  const emitView = (patch) => {
+    if (viewBatch.current) Object.assign(viewBatch.current, patch);
+    else onViewChange?.({ ...currentView, ...patch });
+  };
   const changePage = (next) => {
     const value = { pageIndex: Math.max(0, next.pageIndex), pageSize: next.pageSize };
     if (controlledPagination === undefined) setLocalPagination(value);
@@ -288,6 +341,7 @@ export function DataTable({
     if (controlledSort === undefined) setLocalSort(next);
     onSortChange?.(next);
     resetPage();
+    emitView({ sort: next });
   };
   const changeSort = (column) => {
     const next = { field: column.field, direction:
@@ -298,13 +352,15 @@ export function DataTable({
     if (controlledSearch === undefined) setLocalSearch(next);
     onSearchChange?.(next);
     resetPage();
+    emitView({ search: next });
   };
-  const changeFilter = (field, value) => {
-    const next = { ...filters, [field]: value };
+  const changeFilters = (next) => {
     if (controlledFilters === undefined) setLocalFilters(next);
     onFiltersChange?.(next);
     resetPage();
+    emitView({ filters: next });
   };
+  const changeFilter = (field, value) => changeFilters({ ...filters, [field]: value });
   const changeSelection = (ids) => {
     if (controlledSelected === undefined) setLocalSelected(ids);
     onSelectionChange?.(ids, rows.filter((row, index) =>
@@ -313,6 +369,7 @@ export function DataTable({
   const changeImageView = (next) => {
     if (controlledImageView === undefined) setLocalImageView(next);
     onImageViewChange?.(next);
+    emitView({ imageView: next });
   };
   const changeLayout = (next) => {
     if (controlledLayout === undefined) {
@@ -320,33 +377,29 @@ export function DataTable({
     }
     onLayoutChange?.(next);
     saveLayoutPreference(layoutPreferencesKey, next);
+    emitView({ layout: next });
   };
   const openImage = (value, row, column, id) => {
     if (column.onImageClick) column.onImageClick(value, row);
     else setImagePreview({ field: column.field, rowId: id });
   };
-  const changeColumnOrder = (next) => {
-    if (controlledColumnOrder === undefined) {
-      setStoredColumns((current) => ({ ...current, key: columnPreferencesKey, order: next }));
-    }
-    onColumnOrderChange?.(next);
-    saveColumnPreferences(columnPreferencesKey, next, columnVisibility, columnWidths);
+  const commitColumns = (patch) => {
+    const next = { order: columnOrder, visibility: columnVisibility, widths: columnWidths, ...patch };
+    setStoredColumns((current) => ({ ...current, key: columnPreferencesKey,
+      ...(patch.order && controlledColumnOrder === undefined ? { order: patch.order } : {}),
+      ...(patch.visibility && controlledColumnVisibility === undefined ? { visibility: patch.visibility } : {}),
+      ...(patch.widths && controlledColumnWidths === undefined ? { widths: patch.widths } : {}) }));
+    if (patch.order) onColumnOrderChange?.(patch.order);
+    if (patch.visibility) onColumnVisibilityChange?.(patch.visibility);
+    if (patch.widths) onColumnWidthsChange?.(patch.widths);
+    saveColumnPreferences(columnPreferencesKey, next.order, next.visibility, next.widths);
+    emitView({ ...(patch.order ? { columnOrder: patch.order } : {}),
+      ...(patch.visibility ? { columnVisibility: patch.visibility } : {}),
+      ...(patch.widths ? { columnWidths: patch.widths } : {}) });
   };
-  const changeColumnVisibility = (next) => {
-    if (controlledColumnVisibility === undefined) {
-      setStoredColumns((current) => ({ ...current, key: columnPreferencesKey, visibility: next }));
-    }
-    onColumnVisibilityChange?.(next);
-    saveColumnPreferences(columnPreferencesKey, columnOrder, next, columnWidths);
-  };
-  const changeColumnWidth = (field, width) => {
-    const next = { ...columnWidths, [field]: width };
-    if (controlledColumnWidths === undefined) {
-      setStoredColumns((current) => ({ ...current, key: columnPreferencesKey, widths: next }));
-    }
-    onColumnWidthsChange?.(next);
-    saveColumnPreferences(columnPreferencesKey, columnOrder, columnVisibility, next);
-  };
+  const changeColumnOrder = (next) => commitColumns({ order: next });
+  const changeColumnVisibility = (next) => commitColumns({ visibility: next });
+  const changeColumnWidth = (field, width) => commitColumns({ widths: { ...columnWidths, [field]: width } });
   const widthFor = (column) => {
     const value = dragWidths[column.field] ?? columnWidths[column.field] ?? column.width;
     return Number.isFinite(Number(value)) && Number(value) > 0 ? Number(value) : undefined;
@@ -416,6 +469,54 @@ export function DataTable({
     if (!visibilityReadOnly) onColumnVisibilityChange?.(nextVisibility);
     if (!widthsReadOnly) onColumnWidthsChange?.(nextWidths);
     saveColumnPreferences(columnPreferencesKey, nextOrder, nextVisibility, nextWidths);
+    emitView({ columnOrder: nextOrder, columnVisibility: nextVisibility, columnWidths: nextWidths });
+  };
+  const viewReadOnly = {
+    search: controlledSearch !== undefined && !onSearchChange,
+    filters: controlledFilters !== undefined && !onFiltersChange,
+    sort: controlledSort !== undefined && !onSortChange,
+    imageView: controlledImageView !== undefined && !onImageViewChange,
+    layout: controlledLayout !== undefined && !onLayoutChange,
+    columnOrder: orderReadOnly, columnVisibility: visibilityReadOnly, columnWidths: widthsReadOnly
+  };
+  const sameValue = (left, right) => JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
+  /** Applies a saved, shared or controlled view through the same paths as the viewer's own changes. */
+  const applyView = (raw) => {
+    const next = normalizeView(raw, columns, viewOptions);
+    const changed = (key) => key in next && !viewReadOnly[key] && !sameValue(next[key], currentView[key]);
+    viewBatch.current = {};
+    try {
+      if (changed('search')) changeSearch(next.search);
+      if (changed('filters')) changeFilters(next.filters);
+      if (changed('sort')) applySort(next.sort);
+      const columnsPatch = {};
+      if (changed('columnOrder')) columnsPatch.order = next.columnOrder;
+      if (changed('columnVisibility')) columnsPatch.visibility = next.columnVisibility;
+      if (changed('columnWidths')) columnsPatch.widths = next.columnWidths;
+      if (Object.keys(columnsPatch).length) commitColumns(columnsPatch);
+      if (changed('layout')) changeLayout(next.layout);
+      if (changed('imageView')) changeImageView(next.imageView);
+    } finally {
+      const patch = viewBatch.current;
+      viewBatch.current = null;
+      if (Object.keys(patch).length) onViewChange?.({ ...currentView, ...patch });
+    }
+  };
+  const encodedViewChanges = () => encodeView(Object.fromEntries(Object.entries(currentView)
+    .filter(([key, value]) => !sameValue(value, baseView[key]))));
+  const viewLink = () => withViewParam(window.location.href, viewParam, encodedViewChanges());
+  const copyViewLink = async () => {
+    const href = viewLink();
+    try {
+      await navigator.clipboard.writeText(href);
+      return null;
+    } catch {
+      return href;
+    }
+  };
+  const updateSavedViews = (next) => {
+    setStoredViews({ key: viewsKey, views: next });
+    saveSavedViews(viewsKey, next);
   };
   const exportCsv = async () => {
     if (exporting) return;
@@ -498,9 +599,50 @@ export function DataTable({
     }
   };
 
+  latestApplyView.current = () => applyView({ ...baseView, ...(readViewParam(viewParam) ?? {}) });
+  const syncedView = syncViewToUrl ? encodedViewChanges() : null;
+  useEffect(() => {
+    if (!syncedView || typeof window === 'undefined') return undefined;
+    const timer = setTimeout(() => {
+      try {
+        const next = withViewParam(window.location.href, viewParam, syncedView);
+        if (next !== window.location.href) window.history.replaceState(window.history.state, '', next);
+      } catch {
+        // Some embedded browsers forbid history changes; the table keeps working.
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [syncedView, viewParam]);
+  useEffect(() => {
+    if (!syncViewToUrl || typeof window === 'undefined') return undefined;
+    const onPopState = () => latestApplyView.current?.();
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [syncViewToUrl]);
+  useEffect(() => {
+    // A shared link or defaultView seeded local state; tell the app so remote data can follow.
+    if (!initialView || initialViewAnnounced.current) return;
+    initialViewAnnounced.current = true;
+    const seeded = initialView.view;
+    const report = [
+      ['search', controlledSearch, onSearchChange], ['filters', controlledFilters, onFiltersChange],
+      ['sort', controlledSort, onSortChange], ['imageView', controlledImageView, onImageViewChange],
+      ['layout', controlledLayout, onLayoutChange],
+      ['columnOrder', controlledColumnOrder, onColumnOrderChange],
+      ['columnVisibility', controlledColumnVisibility, onColumnVisibilityChange],
+      ['columnWidths', controlledColumnWidths, onColumnWidthsChange]
+    ];
+    for (const [key, controlled, callback] of report) {
+      if (key in seeded && initialView.carried.has(key) && callback && (controlled === undefined || !sameValue(controlled, seeded[key]))) {
+        callback(seeded[key]);
+      }
+    }
+    if (initialView.fromUrl) onViewChange?.(currentView);
+  }, []);
+
   return (
     <div className={`dt-container ${className}`.trim()}>
-      {(showSearch || showImageViewControl || showColumnControl || showLayoutControl || showExport) && <div className="dt-toolbar">
+      {(showSearch || showImageViewControl || showColumnControl || showLayoutControl || showExport || showViewMenu) && <div className="dt-toolbar">
         {showSearch && <label className="dt-search-label">
           <span className="dt-visually-hidden">{words.search}</span>
           <input className="dt-control dt-search" type="search" value={search ?? ''}
@@ -528,6 +670,13 @@ export function DataTable({
           visibleFields={preferenceVisibleFields} onMove={moveColumn} onToggle={toggleColumn}
           onReset={resetColumns} orderReadOnly={orderReadOnly}
           visibilityReadOnly={visibilityReadOnly} labels={words} />}
+        {showViewMenu && <ViewMenu savedViews={savedViews} currentView={currentView}
+          isCurrent={(saved) => viewsEqual(normalizeView(saved, columns, viewOptions), currentView)}
+          canSave={Boolean(viewsKey)} canShare={linksEnabled}
+          onSave={(name, view) => updateSavedViews(upsertSavedView(savedViews, name, view))}
+          onApply={(saved) => applyView(saved.view)}
+          onDelete={(id) => updateSavedViews(savedViews.filter((saved) => saved.id !== id))}
+          onCopyLink={copyViewLink} labels={words} />}
         {showExport && <button type="button" className="dt-button" onClick={exportCsv}
           disabled={loading || exporting || (csvExport.scope === 'selected' && selected.length === 0)}>
           <ActionIcon name="download" />{exporting ? words.exportingCsv : words.exportCsv}

@@ -6,6 +6,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { JSDOM } from 'jsdom';
 import { filterRows, sortRows, paginateRows } from '../src/rowModel.js';
 import { toCsv } from '../src/csv.js';
+import { decodeView, encodeView, loadSavedViews, normalizeView, readViewParam, saveSavedViews,
+  upsertSavedView, withViewParam } from '../src/viewState.js';
 import { Table as TableEsm, TableEdit as TableEditEsm, toCsv as toCsvEsm } from '../dist/index.js';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
@@ -584,4 +586,225 @@ test('loading and errors are announced', () => {
   assert.ok(screen.getByRole('status').textContent.includes('Cargando'));
   assert.equal(screen.queryByText('Ana'), null);
   assert.equal(screen.getByRole('table').getAttribute('aria-busy'), 'true');
+});
+
+test('views encode to url-safe text and decode back, including accents', () => {
+  const view = { search: 'café ñandú 🎉', filters: { team: 'Ventas' },
+    sort: { field: 'name', direction: 'desc' }, columnOrder: ['name', 'team'],
+    columnVisibility: { team: false }, columnWidths: { name: 200 },
+    layout: 'gallery', imageView: 'large' };
+  const text = encodeView(view);
+  assert.match(text, /^[A-Za-z0-9_-]+$/);
+  assert.deepEqual(decodeView(text), view);
+  assert.equal(encodeView({ search: '', filters: {}, sort: null }), encodeView({}));
+});
+
+test('invalid or future view links decode to null', () => {
+  for (const text of [undefined, '', '%%%', btoa('nope'), btoa('[1]'),
+    btoa(JSON.stringify({ v: 2, search: 'x' }))]) assert.equal(decodeView(text), null);
+});
+
+test('views are normalized against the current columns', () => {
+  const columns = [{ field: 'photo', type: 'image' },
+    { field: 'name', hideable: false, sortable: true, maxWidth: 300 },
+    { field: 'team', filterable: true }, { field: 'added' }];
+  const view = normalizeView({ columnOrder: ['gone', 'team', 'name'],
+    columnVisibility: { name: false, team: false, gone: false },
+    columnWidths: { name: 9999, team: 'x', gone: 100 },
+    sort: { field: 'team', direction: 'up' }, filters: { team: 'A', gone: 'B', name: 3 },
+    layout: 'gallery', imageView: 'huge' }, columns, { sortable: false, galleryAvailable: false });
+  assert.deepEqual(view.columnOrder, ['team', 'name', 'photo', 'added']);
+  assert.deepEqual(view.columnVisibility, { team: false });
+  assert.deepEqual(view.columnWidths, { name: 300 });
+  assert.equal(view.sort, null);
+  assert.deepEqual(view.filters, { team: 'A' });
+  assert.equal(view.layout, 'table');
+  assert.equal(view.imageView, undefined);
+  assert.equal(normalizeView({ columnVisibility: { photo: false, team: false, added: false } },
+    [{ field: 'photo' }, { field: 'team' }, { field: 'added' }],
+    { sortable: true, galleryAvailable: true }).columnVisibility, undefined);
+});
+
+test('saved views survive bad storage and replace by name', () => {
+  window.localStorage.setItem('v-bad', '{oops');
+  assert.deepEqual(loadSavedViews('v-bad'), []);
+  let views = upsertSavedView([], ' Ventas ', { search: 'a' });
+  views = upsertSavedView(views, 'Ventas', { search: 'b' });
+  assert.equal(views.length, 1);
+  assert.equal(views[0].name, 'Ventas');
+  assert.deepEqual(views[0].view, { search: 'b' });
+  saveSavedViews('v-ok', views);
+  assert.deepEqual(loadSavedViews('v-ok'), views);
+  window.localStorage.removeItem('v-bad');
+  window.localStorage.removeItem('v-ok');
+});
+
+test('view links keep other query params and the hash', () => {
+  const href = withViewParam('http://x.test/app?tab=2#top', 'view', encodeView({ search: 'a' }));
+  const url = new URL(href);
+  assert.equal(url.searchParams.get('tab'), '2');
+  assert.equal(url.hash, '#top');
+  assert.deepEqual(readViewParam('view', href), { search: 'a' });
+  assert.equal(withViewParam(href, 'view', null), 'http://x.test/app?tab=2#top');
+  assert.equal(withViewParam(href, 'view', encodeView({})), 'http://x.test/app?tab=2#top');
+});
+
+const h = React.createElement;
+
+test('a view link applies on mount and asks manual tables to refetch', () => {
+  window.history.replaceState(null, '', '/?view=' + encodeView({ search: 'ana',
+    filters: { team: 'Ventas' }, sort: { field: 'name', direction: 'desc' } }));
+  const calls = [];
+  render(h(Table, { columns: [{ field: 'name', sortable: true }, { field: 'team', filterable: true }],
+    rows: [], searchable: true, shareableViews: true, manualFiltering: true, manualSorting: true,
+    onSearchChange: (v) => calls.push(['search', v]),
+    onFiltersChange: (v) => calls.push(['filters', v]),
+    onSortChange: (v) => calls.push(['sort', v]) }));
+  assert.equal(screen.getByRole('searchbox', { name: 'Buscar en la tabla' }).value, 'ana');
+  assert.equal(screen.getByRole('searchbox', { name: 'Filtrar team' }).value, 'Ventas');
+  assert.deepEqual(calls.sort(), [['filters', { team: 'Ventas' }], ['search', 'ana'],
+    ['sort', { field: 'name', direction: 'desc' }]]);
+  window.history.replaceState(null, '', '/');
+});
+
+test('individual controlled props win over views and read-only pieces are untouched', () => {
+  window.history.replaceState(null, '', '/?view=' + encodeView({ sort: { field: 'name', direction: 'desc' } }));
+  render(h(Table, { columns: [{ field: 'name', sortable: true }], rows: [{ name: 'b' }, { name: 'a' }],
+    shareableViews: true, sort: { field: 'name', direction: 'asc' } }));
+  assert.deepEqual(screen.getAllByRole('cell').map((c) => c.textContent), ['a', 'b']);
+  window.history.replaceState(null, '', '/');
+});
+
+test('onViewChange receives the whole view; defaultView seeds state', () => {
+  const seen = [];
+  render(h(Table, { columns: [{ field: 'name' }, { field: 'team' }], rows: [], searchable: true,
+    defaultView: { columnVisibility: { team: false } }, onViewChange: (v) => seen.push(v) }));
+  assert.ok(!screen.queryByRole('columnheader', { name: 'team' }), 'team stays hidden');
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'x' } });
+  assert.equal(seen.at(-1).search, 'x');
+  assert.deepEqual(seen.at(-1).columnVisibility, { team: false });
+});
+
+test('a controlled view drives uncontrolled pieces', () => {
+  render(h(Table, { columns: [{ field: 'name' }], rows: [], searchable: true,
+    view: { search: 'luis' }, onViewChange: () => {} }));
+  assert.equal(screen.getByRole('searchbox').value, 'luis');
+});
+
+test('without shareableViews the url view is ignored', () => {
+  window.history.replaceState(null, '', '/?view=' + encodeView({ search: 'zzz' }));
+  render(h(Table, { columns: [{ field: 'name' }], rows: [], searchable: true }));
+  assert.equal(screen.getByRole('searchbox').value, '');
+  window.history.replaceState(null, '', '/');
+});
+
+test('viewer saves, applies and deletes named views that persist', () => {
+  const props = { columns: [{ field: 'name' }, { field: 'team' }], rows: [], searchable: true,
+    viewsKey: 'views-test' };
+  const { unmount } = render(h(Table, props));
+  assert.equal(screen.getByRole('button', { name: 'Guardar vista' }).disabled, true);
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'ana' } });
+  fireEvent.change(screen.getByRole('textbox', { name: 'Nombre de la vista' }), { target: { value: 'Ana' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar vista' }));
+  unmount();
+  render(h(Table, props));
+  assert.equal(screen.getByRole('searchbox').value, '');
+  fireEvent.click(screen.getByRole('button', { name: 'Aplicar Ana' }));
+  assert.equal(screen.getByRole('searchbox').value, 'ana');
+  assert.equal(screen.getByRole('button', { name: 'Aplicar Ana' }).getAttribute('aria-current'), 'true');
+  fireEvent.click(screen.getByRole('button', { name: 'Eliminar Ana' }));
+  assert.deepEqual(loadSavedViews('views-test'), []);
+  window.localStorage.removeItem('views-test');
+});
+
+test('copy link writes the current view and falls back to a visible field', async () => {
+  window.history.replaceState(null, '', '/app?tab=2');
+  let copied;
+  Object.defineProperty(navigator, 'clipboard', { configurable: true,
+    value: { writeText: async (t) => { copied = t; } } });
+  render(h(Table, { columns: [{ field: 'name' }], rows: [], searchable: true, shareableViews: true }));
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'ana' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Copiar enlace' }));
+  await screen.findByText('Enlace copiado');
+  assert.equal(new URL(copied).searchParams.get('tab'), '2');
+  assert.deepEqual(readViewParam('view', copied), { search: 'ana' });
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+  fireEvent.click(screen.getByRole('button', { name: 'Copiar enlace' }));
+  assert.equal((await screen.findByRole('textbox', { name: 'Copia este enlace' })).value, copied);
+  assert.equal(window.location.search, '?tab=2');
+  window.history.replaceState(null, '', '/');
+});
+
+test('syncViewToUrl replaces the url after a pause and reapplies on popstate', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  window.history.replaceState(null, '', '/app?tab=2#top');
+  const pushes = [];
+  const originalPush = window.history.pushState;
+  window.history.pushState = (...args) => pushes.push(args);
+  const { unmount } = render(h(Table, { columns: [{ field: 'name' }], rows: [], searchable: true,
+    syncViewToUrl: true }));
+  const before = window.history.length;
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'ana' } });
+  assert.equal(readViewParam('view'), null);
+  t.mock.timers.tick(300);
+  assert.deepEqual(readViewParam('view'), { search: 'ana' });
+  assert.equal(new URL(window.location.href).searchParams.get('tab'), '2');
+  assert.equal(window.location.hash, '#top');
+  assert.equal(window.history.length, before);
+  assert.equal(pushes.length, 0);
+  window.history.replaceState(null, '', '/app?view=' + encodeView({ search: 'luis' }));
+  fireEvent(window, new window.PopStateEvent('popstate'));
+  assert.equal(screen.getByRole('searchbox').value, 'luis');
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'pendiente' } });
+  unmount();
+  t.mock.timers.tick(300);
+  assert.deepEqual(readViewParam('view'), { search: 'luis' });
+  window.history.pushState = originalPush;
+  window.history.replaceState(null, '', '/');
+});
+
+test('the manual link field does not steal focus while the viewer keeps typing', async () => {
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+  render(h(Table, { columns: [{ field: 'name' }], rows: [], searchable: true, shareableViews: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Copiar enlace' }));
+  await screen.findByRole('textbox', { name: 'Copia este enlace' });
+  const search = screen.getByRole('searchbox');
+  search.focus();
+  fireEvent.change(search, { target: { value: 'ana' } });
+  assert.ok(document.activeElement === search, 'focus stays in the search box');
+});
+
+test('saved views follow a change of viewsKey without overwriting the other list', () => {
+  saveSavedViews('views-a', upsertSavedView([], 'A', { search: 'a' }));
+  saveSavedViews('views-b', upsertSavedView([], 'B', { search: 'b' }));
+  const props = { columns: [{ field: 'name' }], rows: [], searchable: true };
+  const { rerender } = render(h(Table, { ...props, viewsKey: 'views-a' }));
+  rerender(h(Table, { ...props, viewsKey: 'views-b' }));
+  assert.ok(screen.queryByRole('button', { name: 'Aplicar B' }), 'shows B views');
+  fireEvent.change(screen.getByRole('textbox', { name: 'Nombre de la vista' }), { target: { value: 'Nueva' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar vista' }));
+  assert.deepEqual(loadSavedViews('views-b').map((v) => v.name), ['B', 'Nueva']);
+  assert.deepEqual(loadSavedViews('views-a').map((v) => v.name), ['A']);
+  window.localStorage.removeItem('views-a');
+  window.localStorage.removeItem('views-b');
+});
+
+test('view links leave the rest of the query string exactly as written', () => {
+  const href = 'http://x.test/a?q=a%20b&flag&view=list#h';
+  assert.equal(withViewParam(href, 'view', null), href);
+  assert.equal(withViewParam(href, 'view', encodeView({})), href);
+  const plain = 'http://x.test/a?q=a%20b&flag#h';
+  const set = withViewParam(plain, 'view', encodeView({ search: 'x' }));
+  assert.equal(set, `http://x.test/a?q=a%20b&flag&view=${encodeView({ search: 'x' })}#h`);
+  assert.equal(withViewParam(set, 'view', null), plain);
+});
+
+test('a link only reports the fields it carries', () => {
+  window.history.replaceState(null, '', '/?view=' + encodeView({ search: 'ana' }));
+  const calls = [];
+  render(h(Table, { columns: [{ field: 'name', sortable: true }], rows: [], searchable: true,
+    shareableViews: true, onSearchChange: (v) => calls.push('search'), onSortChange: () => calls.push('sort'),
+    onColumnWidthsChange: () => calls.push('widths'), onLayoutChange: () => calls.push('layout') }));
+  assert.deepEqual(calls, ['search']);
+  window.history.replaceState(null, '', '/');
 });
