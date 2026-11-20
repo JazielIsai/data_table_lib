@@ -1,6 +1,6 @@
 {
   "name": "@isai_dev/data_table_lib",
-  "version": "2.0.0-alpha.7",
+  "version": "2.0.0-alpha.8",
   "description": "Tablas React que también se convierten en galerías de fotos, con edición y preferencias listas para usar",
   "keywords": [
     "react-table",

@@ -7,6 +7,7 @@ import RemoteExample from '../examples/RemoteExample.jsx';
 import PhotoExample from '../examples/PhotoExample.jsx';
 import ProductExample from '../examples/ProductExample.jsx';
 import ViewsExample from '../examples/ViewsExample.jsx';
+import ControlsExample from '../examples/ControlsExample.jsx';
 import anaPhoto from '../examples/assets/ana.jpg';
 import luisPhoto from '../examples/assets/luis.jpg';
 import martaPhoto from '../examples/assets/marta.jpg';
@@ -133,6 +134,33 @@ export function TeamViews({ people }) {
     gallery={{ imageField: 'photo', titleField: 'name' }}
     viewsKey="team-views" shareableViews />;
 }`
+  },
+  {
+    id: 'controls',
+    label: 'Inputs',
+    title: 'Casillas y campos a tu medida',
+    description: 'Prueba casillas, interruptores, opciones únicas y múltiples, y alterna entre lectura y edición.',
+    Component: ControlsExample,
+    code: `import { Table, TableEdit } from '@isai_dev/data_table_lib';
+import '@isai_dev/data_table_lib/style.css';
+
+const columns = [
+  { field: 'approved', headerName: 'Aprobado', type: 'checkbox' },
+  { field: 'alerts', headerName: 'Avisos', type: 'switch' },
+  { field: 'role', headerName: 'Rol', type: 'radio',
+    options: [{ value: 'reader', label: 'Lector' },
+      { value: 'editor', label: 'Editor' }] },
+  { field: 'channels', headerName: 'Canales', type: 'checkbox-group',
+    options: [{ value: 'email', label: 'Correo' },
+      { value: 'app', label: 'App' }] }
+];
+
+// Muestra controles de solo lectura:
+<Table columns={columns} rows={rows} />;
+
+// O permite editar y guardar un borrador por fila:
+<TableEdit columns={columns} rows={rows}
+  editMode="save" onSave={(draft, original) => save(draft, original)} />;`
   },
   {
     id: 'local',

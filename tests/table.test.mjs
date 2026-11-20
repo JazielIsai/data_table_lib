@@ -562,6 +562,101 @@ test('save mode validates, saves a draft and cancels changes', async () => {
   assert.equal(cancelled.length, 1);
 });
 
+test('read-only tables show choices and option labels without allowing edits', () => {
+  let opened = 0;
+  render(React.createElement(Table, {
+    columns: [
+      { field: 'active', headerName: 'Activo', type: 'checkbox' },
+      { field: 'alerts', headerName: 'Avisos', type: 'switch' },
+      { field: 'role', headerName: 'Rol', type: 'radio',
+        options: [{ value: 'reader', label: 'Lector' }, { value: 'editor', label: 'Editor' }] },
+      { field: 'tags', headerName: 'Permisos', type: 'checkbox-group',
+        options: [{ value: 1, label: 'Leer' }, { value: 2, label: 'Escribir' }] },
+      { field: 'team', headerName: 'Equipo', type: 'select',
+        options: [{ value: 'dev', label: 'Desarrollo' }] },
+      { field: 'open', type: 'button', label: 'Abrir', onClick: () => { opened += 1; } }
+    ],
+    rows: [{ id: 1, active: true, alerts: false, role: 'editor', tags: [1], team: 'dev' }]
+  }));
+  assert.equal(screen.getByRole('checkbox', { name: 'Activo' }).checked, true);
+  assert.equal(screen.getByRole('checkbox', { name: 'Activo' }).disabled, true);
+  assert.equal(screen.getByRole('switch', { name: 'Avisos' }).disabled, true);
+  assert.equal(screen.getByRole('radio', { name: 'Editor' }).checked, true);
+  assert.equal(screen.getByRole('radio', { name: 'Editor' }).disabled, true);
+  assert.equal(screen.getByRole('checkbox', { name: 'Leer' }).checked, true);
+  assert.equal(screen.getByRole('checkbox', { name: 'Escribir' }).disabled, true);
+  assert.ok(screen.getByText('Desarrollo'));
+  fireEvent.click(screen.getByRole('button', { name: 'Abrir' }));
+  assert.equal(opened, 1);
+});
+
+test('save mode stores boolean, multiple choice and input values in the draft', async () => {
+  const saved = [];
+  render(React.createElement(TableEdit, {
+    columns: [
+      { field: 'approved', headerName: 'Aprobado', type: 'checkbox' },
+      { field: 'alerts', headerName: 'Avisos', type: 'switch' },
+      { field: 'role', headerName: 'Rol', type: 'radio',
+        options: [{ value: 'reader', label: 'Lector' }, { value: 'editor', label: 'Editor' }] },
+      { field: 'tags', headerName: 'Permisos', type: 'checkbox-group',
+        options: [{ value: 1, label: 'Leer' }, { value: 2, label: 'Escribir' }] },
+      { field: 'notes', headerName: 'Notas', type: 'textarea', rows: 4 },
+      { field: 'email', headerName: 'Correo', type: 'email' },
+      { field: 'priority', headerName: 'Prioridad', type: 'range', min: 0, max: 10 },
+      { field: 'fixed', headerName: 'Fijo', type: 'text', editable: false }
+    ],
+    rows: [{ id: 1, approved: false, alerts: false, role: 'reader', tags: [1],
+      notes: '', email: '', priority: 3, fixed: 'Sin cambios' }],
+    editMode: 'save', onSave: (draft) => saved.push(draft)
+  }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Aprobado' }));
+  fireEvent.click(screen.getByRole('switch', { name: 'Avisos' }));
+  fireEvent.click(screen.getByRole('radio', { name: 'Editor' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Escribir' }));
+  fireEvent.change(screen.getByRole('textbox', { name: 'Notas' }),
+    { target: { value: 'Revisado' } });
+  fireEvent.change(screen.getByRole('textbox', { name: 'Correo' }),
+    { target: { value: 'ana@example.com' } });
+  fireEvent.change(screen.getByRole('slider', { name: 'Prioridad' }),
+    { target: { value: '7' } });
+  assert.ok(screen.getByText('Sin cambios'));
+  assert.equal(screen.queryByRole('textbox', { name: 'Fijo' }), null);
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+  await waitFor(() => assert.equal(saved.length, 1));
+  assert.deepEqual({ approved: saved[0].approved, alerts: saved[0].alerts,
+    role: saved[0].role, tags: saved[0].tags, notes: saved[0].notes,
+    email: saved[0].email, priority: saved[0].priority },
+  { approved: true, alerts: true, role: 'editor', tags: [1, 2], notes: 'Revisado',
+    email: 'ana@example.com', priority: '7' });
+});
+
+test('immediate mode reports normalized choice values and keeps onChange compatible', () => {
+  const values = [];
+  const raw = [];
+  render(React.createElement(TableEdit, {
+    columns: [
+      { field: 'active', headerName: 'Activo', type: 'checkbox',
+        onValueChange: (value, row) => values.push([value, row.id]) },
+      { field: 'tags', headerName: 'Permisos', type: 'checkbox-group',
+        options: [{ value: 1, label: 'Leer' }, { value: 2, label: 'Escribir' }],
+        onValueChange: (value) => values.push(value) },
+      { field: 'role', headerName: 'Rol', type: 'radio',
+        options: [{ value: 1, label: 'Lector' }, { value: 2, label: 'Editor' }],
+        onValueChange: (value) => values.push(value) },
+      { field: 'name', headerName: 'Nombre', type: 'text',
+        onChange: (event) => raw.push(event.target.value) }
+    ],
+    rows: [{ id: 1, active: false, tags: [1], role: 1, name: 'Ana' }]
+  }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Activo' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Escribir' }));
+  fireEvent.click(screen.getByRole('radio', { name: 'Editor' }));
+  fireEvent.change(screen.getByRole('textbox', { name: 'Nombre' }),
+    { target: { value: 'Alicia' } });
+  assert.deepEqual(values, [[true, 1], [1, 2], 2]);
+  assert.deepEqual(raw, ['Alicia']);
+});
+
 test('failed saves keep the draft and show an error for retry', async () => {
   render(React.createElement(TableEdit, {
     columns: [{ field: 'name', type: 'text' }],

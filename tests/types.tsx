@@ -11,7 +11,14 @@ const columns: TableColumn<Person>[] = [
     pinned: 'left', width: 180,
     type: 'text', validate: (value) => value ? null : 'Required' },
   { field: 'role', headerName: 'Role', type: 'select',
-    options: [{ value: 'admin', label: 'Administrator' }] }
+    options: [{ value: 'admin', label: 'Administrator' }] },
+  { field: 'active', headerName: 'Active', type: 'switch',
+    onValueChange: (value, row) => { Boolean(value); row.id; } },
+  { field: 'tags', headerName: 'Permissions', type: 'checkbox-group',
+    options: [{ value: 1, label: 'Read' }, { value: 2, label: 'Write' }] },
+  { field: 'notes', headerName: 'Notes', type: 'textarea', rows: 4, maxLength: 200 },
+  { field: 'email', headerName: 'Email', type: 'email', editable: false },
+  { field: 'priority', headerName: 'Priority', type: 'range', min: 0, max: 10, step: 1 }
 ];
 const sort: TableSort = { field: 'name', direction: 'asc' };
 

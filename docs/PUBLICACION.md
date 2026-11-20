@@ -5,7 +5,7 @@ La página del proyecto, un Release de GitHub y un paquete instalable son public
 | Destino | Qué ofrece | Estado inicial |
 | --- | --- | --- |
 | GitHub Pages | Sitio con documentación y ejemplos interactivos | Publicado en <https://jazielisai.github.io/data_table_lib/> |
-| GitHub Releases | Una versión identificada por un tag, notas y archivos descargables | `v0.1.0` y `v0.1.1` publicados; `v2.0.0-alpha.3` a `v2.0.0-alpha.7` como prereleases |
+| GitHub Releases | Una versión identificada por un tag, notas y archivos descargables | `v0.1.0` y `v0.1.1` publicados; `v2.0.0-alpha.3` a `v2.0.0-alpha.8` como prereleases |
 | GitHub Packages | Un paquete en el registro npm de GitHub | No se publica al crear un release |
 | npmjs.com | Paquete que se instala con `npm install` | `latest`: `0.1.2`; `next`: `2.0.0-alpha.5`. |
 
@@ -30,6 +30,8 @@ La vista previa [v2.0.0-alpha.5](https://github.com/JazielIsai/data_table_lib/re
 La vista previa [v2.0.0-alpha.6](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.6) añade la presentación visual, ejemplos de catálogo, directorio y datos remotos, y metadatos para encontrar el paquete. Su `.tgz` está adjunto al Release. npm aceptó el envío, pero `alpha.6` todavía no aparecía en el registro público en la última comprobación; verifica la versión antes de anunciarla como instalable.
 
 La vista previa [v2.0.0-alpha.7](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.7) añade vistas guardadas por nombre y enlaces para compartir búsqueda, filtros, columnas y presentación. El sitio público incluye una demo interactiva de la función. Su disponibilidad en npm debe comprobarse por separado del Release de GitHub.
+
+La vista previa [v2.0.0-alpha.8](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.8) añade casillas, interruptores, opciones únicas y múltiples, y más tipos de input. `Table` los muestra en lectura y `TableEdit` permite modificarlos en modo inmediato o con borrador por fila. La página pública incluye una demo **Inputs**. Su disponibilidad en npm también debe comprobarse por separado.
 
 Antes de publicar una nueva versión, ejecuta `npm test`, `npm run build:site` y `npm pack --dry-run`. Confirma que la versión de `package.json` coincide con el tag del nuevo release.
 
