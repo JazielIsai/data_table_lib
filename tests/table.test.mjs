@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { JSDOM } from 'jsdom';
 import { filterRows, sortRows, paginateRows } from '../src/rowModel.js';
 import { toCsv } from '../src/csv.js';
-import { Table as TableEsm, TableEdit as TableEditEsm } from '../dist/index.js';
+import { Table as TableEsm, TableEdit as TableEditEsm, toCsv as toCsvEsm } from '../dist/index.js';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
   url: 'http://localhost/'
@@ -22,12 +22,14 @@ const { render, screen, within, fireEvent, waitFor, cleanup } =
 afterEach(cleanup);
 
 const require = createRequire(import.meta.url);
-const { Table, TableEdit } = require('../dist/index.cjs');
+const { Table, TableEdit, toCsv: toCsvCjs } = require('../dist/index.cjs');
 
 test('exports ESM and CommonJS components', () => {
   for (const component of [TableEsm, TableEditEsm, Table, TableEdit]) {
     assert.equal(typeof component, 'function');
   }
+  assert.equal(toCsvEsm([{ name: 'Ana' }], [{ field: 'name' }]),
+    toCsvCjs([{ name: 'Ana' }], [{ field: 'name' }]));
 });
 
 test('CSV escapes quotes, newlines and spreadsheet formulas', () => {
@@ -75,7 +77,7 @@ test('dragging a column edge commits a clamped width', () => {
   assert.equal(handle.getAttribute('aria-valuenow'), '210');
 });
 
-test('CSV export scopes filtered rows and delegates remote export', () => {
+test('CSV export scopes filtered rows and delegates remote export', async () => {
   const calls = [];
   render(React.createElement(Table, {
     columns: [{ field: 'name', headerName: 'Nombre' }],
@@ -88,6 +90,66 @@ test('CSV export scopes filtered rows and delegates remote export', () => {
   assert.deepEqual(calls[0].rows.map((row) => row.name), ['Ana']);
   assert.equal(calls[0].context.scope, 'filtered');
   assert.equal(calls[0].context.columns[0].field, 'name');
+  await waitFor(() => assert.ok(screen.getByRole('button', { name: 'Exportar CSV' })));
+});
+
+test('pinned columns stay at the edges with selection and actions', () => {
+  render(React.createElement(Table, {
+    columns: [
+      { field: 'middle', headerName: 'Medio', width: 120 },
+      { field: 'right', headerName: 'Derecha', pinned: 'right', width: 100 },
+      { field: 'left', headerName: 'Izquierda', pinned: 'left', width: 150 }
+    ],
+    rows: [{ id: 1, middle: 'M', left: 'I', right: 'D' }],
+    resizableColumns: true, selectable: true, pinActions: true,
+    actions: [{ label: 'Ver' }]
+  }));
+  const headers = screen.getAllByRole('columnheader');
+  assert.deepEqual(headers.map((header) => header.textContent), ['', 'Izquierda', 'Medio', 'Derecha', 'Acciones']);
+  assert.equal(headers[1].style.left, '42px');
+  assert.equal(headers[3].style.right, '160px');
+  assert.equal(headers[4].style.right, '0px');
+  fireEvent.keyDown(within(headers[1]).getByRole('separator'), { key: 'ArrowRight' });
+  assert.equal(headers[1].style.left, '42px');
+  assert.equal(screen.getByRole('cell', { name: 'I' }).style.left, '42px');
+});
+
+test('remote export reports progress and failures', async () => {
+  let rejectExport;
+  render(React.createElement(Table, {
+    columns: [{ field: 'name' }], rows: [{ id: 1, name: 'Ana' }],
+    csvExport: { onExport: () => new Promise((_resolve, reject) => { rejectExport = reject; }) }
+  }));
+  fireEvent.click(screen.getByRole('button', { name: 'Exportar CSV' }));
+  assert.equal(screen.getByRole('button', { name: 'Exportando…' }).disabled, true);
+  rejectExport(new Error('Servidor no disponible'));
+  await waitFor(() => assert.equal(screen.getByRole('alert').textContent, 'Servidor no disponible'));
+  assert.equal(screen.getByRole('button', { name: 'Exportar CSV' }).disabled, false);
+});
+
+test('remote export downloads a returned Blob with its chosen filename', async () => {
+  const originalCreate = URL.createObjectURL;
+  const originalRevoke = URL.revokeObjectURL;
+  const originalClick = dom.window.HTMLAnchorElement.prototype.click;
+  const downloads = [];
+  URL.createObjectURL = () => 'blob:csv-test';
+  URL.revokeObjectURL = () => {};
+  dom.window.HTMLAnchorElement.prototype.click = function () {
+    downloads.push({ href: this.href, filename: this.download });
+  };
+  try {
+    render(React.createElement(Table, {
+      columns: [{ field: 'name' }], rows: [{ id: 1, name: 'Ana' }],
+      csvExport: { onExport: async () => ({ blob: new Blob(['name\nAna']), filename: 'servidor.csv' }) }
+    }));
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar CSV' }));
+    await waitFor(() => assert.equal(downloads.length, 1));
+    assert.equal(downloads[0].filename, 'servidor.csv');
+  } finally {
+    URL.createObjectURL = originalCreate;
+    URL.revokeObjectURL = originalRevoke;
+    dom.window.HTMLAnchorElement.prototype.click = originalClick;
+  }
 });
 
 test('image presentation can be configured and changed by the viewer', () => {

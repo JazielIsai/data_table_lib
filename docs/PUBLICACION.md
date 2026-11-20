@@ -19,7 +19,9 @@ El primer release `v0.1.0` conserva el nombre anterior. La primera publicación 
 
 La vista previa [v2.0.0-alpha.3](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.3) está publicada como prerelease y adjunta el mismo paquete `.tgz` que se publicó en npm con la etiqueta `next`.
 
-La vista previa [v2.0.0-alpha.4](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.4) incluye columnas ajustables y exportación CSV. Su paquete `.tgz` está adjunto al Release, pero todavía no está publicado en npm porque la sesión npm necesita autenticación. Hasta entonces, `next` sigue apuntando a `alpha.3`.
+La vista previa [v2.0.0-alpha.4](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.4) incluye columnas ajustables y exportación CSV. Su paquete `.tgz` está adjunto al Release. La publicación en npm sigue pendiente de la confirmación de un solo uso de la cuenta; hasta entonces, `next` apunta a `alpha.3`.
+
+La rama `main` prepara `alpha.5` con columnas fijadas y exportación remota asíncrona. Publica cada versión desde su paquete `.tgz` correspondiente; ejecutar `npm publish` desde `main` publicaría `alpha.5`, no el archivo de `alpha.4`.
 
 Antes de publicar una nueva versión, ejecuta `npm test`, `npm run build:site` y `npm pack --dry-run`. Confirma que la versión de `package.json` coincide con el tag del nuevo release.
 

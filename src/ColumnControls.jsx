@@ -26,11 +26,13 @@ export function ColumnControls({ columns, visibleFields, onMove, onToggle, onRes
             <span className="dt-column-move">
               <button type="button" className="dt-button"
                 aria-label={labels.moveColumnUp(label)} title={labels.moveColumnUp(label)}
-                disabled={orderReadOnly || !previous || column.reorderable === false || previous.reorderable === false}
+                disabled={orderReadOnly || !previous || column.pinned !== previous.pinned
+                  || column.reorderable === false || previous.reorderable === false}
                 onClick={() => onMove(column.field, -1)}>↑</button>
               <button type="button" className="dt-button"
                 aria-label={labels.moveColumnDown(label)} title={labels.moveColumnDown(label)}
-                disabled={orderReadOnly || !next || column.reorderable === false || next.reorderable === false}
+                disabled={orderReadOnly || !next || column.pinned !== next.pinned
+                  || column.reorderable === false || next.reorderable === false}
                 onClick={() => onMove(column.field, 1)}>↓</button>
             </span>
           </li>;

@@ -7,7 +7,7 @@ import { ColumnControls } from './ColumnControls.jsx';
 import { GalleryView } from './GalleryView.jsx';
 import { loadColumnPreferences, normalizeColumnOrder, saveColumnPreferences } from './columnState.js';
 import { loadLayoutPreference, saveLayoutPreference } from './layoutState.js';
-import { downloadCsv, toCsv } from './csv.js';
+import { downloadBlob, downloadCsv, toCsv } from './csv.js';
 
 const defaultId = (row, index) => row?.id ?? index;
 const initialPage = { pageIndex: 0, pageSize: 10 };
@@ -94,6 +94,7 @@ export function DataTable({
   onColumnVisibilityChange, columnPreferencesKey,
   resizableColumns = false, columnWidths: controlledColumnWidths,
   defaultColumnWidths, onColumnWidthsChange,
+  pinActions = false,
   csvExport,
   defaultLayout = 'table', layout: controlledLayout, onLayoutChange,
   allowLayoutChange = false, layoutPreferencesKey, gallery = {},
@@ -136,6 +137,8 @@ export function DataTable({
     bulkActions: 'Acciones de selección',
     clearSelection: 'Limpiar selección',
     exportCsv: 'Exportar CSV',
+    exportingCsv: 'Exportando…',
+    exportError: 'No se pudo exportar el CSV',
     resizeColumn: (header) => `Cambiar ancho de ${header}`,
     ...labels
   };
@@ -165,6 +168,8 @@ export function DataTable({
   const [saveErrors, setSaveErrors] = useState({});
   const [fileVersions, setFileVersions] = useState({});
   const [dragWidths, setDragWidths] = useState({});
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
   const resizeCleanup = useRef(null);
   const errorPrefix = useId().replace(/:/g, '');
 
@@ -189,7 +194,12 @@ export function DataTable({
   const columnVisibility = controlledColumnVisibility ?? localColumns.visibility;
   const columnWidths = controlledColumnWidths ?? localColumns.widths ?? {};
   const columnByField = new Map(columns.map((column) => [column.field, column]));
-  const orderedColumns = columnOrder.map((field) => columnByField.get(field));
+  const preferredColumns = columnOrder.map((field) => columnByField.get(field));
+  const orderedColumns = [
+    ...preferredColumns.filter((column) => column.pinned === 'left'),
+    ...preferredColumns.filter((column) => column.pinned !== 'left' && column.pinned !== 'right'),
+    ...preferredColumns.filter((column) => column.pinned === 'right')
+  ];
   const customizableColumns = orderedColumns.filter((column) => !column.hidden);
   const preferenceVisibleFields = customizableColumns.filter((column) =>
     columnVisibility[column.field] !== false).map((column) => column.field);
@@ -213,6 +223,22 @@ export function DataTable({
   const actionItems = Array.isArray(actions) ? actions : [];
   const bulkActionItems = Array.isArray(bulkActions) ? bulkActions : [];
   const hasActions = actionItems.length > 0 || saveMode;
+  const fixedLayout = resizableColumns || pinActions
+    || visibleColumns.some((column) => column.pinned === 'left' || column.pinned === 'right');
+  const pinStyle = (column) => {
+    if (column.pinned === 'left') {
+      const previous = visibleColumns.slice(0, visibleColumns.indexOf(column));
+      return { left: (selectable ? 42 : 0) + previous.reduce((sum, item) => sum + (widthFor(item) ?? 160), 0) };
+    }
+    if (column.pinned === 'right') {
+      const following = visibleColumns.slice(visibleColumns.indexOf(column) + 1);
+      return { right: (pinActions && hasActions ? 160 : 0)
+        + following.reduce((sum, item) => sum + (widthFor(item) ?? 160), 0) };
+    }
+    return undefined;
+  };
+  const pinClass = (column) => column.pinned === 'left' ? 'dt-pinned-left'
+    : column.pinned === 'right' ? 'dt-pinned-right' : undefined;
   const showSearch = searchable || controlledSearch !== undefined;
   const showImageViewControl = allowImageViewChange && hasImageColumns;
   const showColumnControl = allowColumnCustomization && customizableColumns.length > 0;
@@ -363,6 +389,7 @@ export function DataTable({
     const position = visibleOrder.indexOf(field);
     const neighbor = visibleOrder[position + direction];
     if (!neighbor
+      || columnByField.get(field)?.pinned !== columnByField.get(neighbor)?.pinned
       || columnByField.get(field)?.reorderable === false
       || columnByField.get(neighbor)?.reorderable === false) return;
     const next = [...columnOrder];
@@ -390,7 +417,9 @@ export function DataTable({
     if (!widthsReadOnly) onColumnWidthsChange?.(nextWidths);
     saveColumnPreferences(columnPreferencesKey, nextOrder, nextVisibility, nextWidths);
   };
-  const exportCsv = () => {
+  const exportCsv = async () => {
+    if (exporting) return;
+    setExportError('');
     const scope = csvExport.scope ?? 'filtered';
     const exportRows = scope === 'selected'
       ? processedRows.filter((row, index) => selectedSet.has(String(getRowId(row, index))))
@@ -398,8 +427,20 @@ export function DataTable({
     const exportColumns = visibleColumns.filter((column) => column.type !== 'button');
     const context = { scope, columns: exportColumns, selectedIds: selected,
       search, filters, sort, pagination: { pageIndex, pageSize }, rowCount: total };
-    if (csvExport.onExport) csvExport.onExport(exportRows, context);
-    else downloadCsv(toCsv(exportRows, exportColumns), csvExport.filename);
+    setExporting(true);
+    try {
+      if (csvExport.onExport) {
+        const result = await csvExport.onExport(exportRows, context);
+        if (result instanceof Blob) downloadBlob(result, csvExport.filename);
+        else if (result?.blob instanceof Blob) {
+          downloadBlob(result.blob, result.filename ?? csvExport.filename);
+        }
+      } else downloadCsv(toCsv(exportRows, exportColumns), csvExport.filename);
+    } catch (cause) {
+      setExportError(cause?.message || words.exportError);
+    } finally {
+      setExporting(false);
+    }
   };
   const togglePage = () => {
     const allSelected = pageIds.length > 0 && selectedPageCount === pageIds.length;
@@ -488,11 +529,12 @@ export function DataTable({
           onReset={resetColumns} orderReadOnly={orderReadOnly}
           visibilityReadOnly={visibilityReadOnly} labels={words} />}
         {showExport && <button type="button" className="dt-button" onClick={exportCsv}
-          disabled={loading || (csvExport.scope === 'selected' && selected.length === 0)}>
-          <ActionIcon name="download" />{words.exportCsv}
+          disabled={loading || exporting || (csvExport.scope === 'selected' && selected.length === 0)}>
+          <ActionIcon name="download" />{exporting ? words.exportingCsv : words.exportCsv}
         </button>}
       </div>}
       {error && <div className="dt-message dt-error" role="alert">{error}</div>}
+      {exportError && <div className="dt-message dt-error" role="alert">{exportError}</div>}
       {selectable && selected.length > 0 && bulkActionItems.length > 0 &&
         <div className="dt-bulk-bar" role="toolbar" aria-label={words.bulkActions}>
           <strong aria-live="polite">{words.selectedCount(selected.length)}</strong>
@@ -534,13 +576,13 @@ export function DataTable({
         labels={words} />}
       {layout === 'table' &&
       <div className="dt-scroll">
-        <table className={`dt-table ${resizableColumns ? 'dt-table-resizable' : ''}`}
-          style={resizableColumns ? { width: visibleColumns.reduce((sum, column) =>
+        <table className={`dt-table ${fixedLayout ? 'dt-table-resizable' : ''}`}
+          style={fixedLayout ? { width: visibleColumns.reduce((sum, column) =>
             sum + (widthFor(column) ?? 160), (selectable ? 42 : 0) + (hasActions ? 160 : 0)),
             minWidth: 0 } : undefined}
           aria-busy={loading}>
           {caption && <caption>{caption}</caption>}
-          {resizableColumns && <colgroup>
+          {fixedLayout && <colgroup>
             {selectable && <col style={{ width: 42 }} />}
             {visibleColumns.map((column) => <col key={column.field}
               style={{ width: widthFor(column) ?? 160 }} />)}
@@ -548,7 +590,8 @@ export function DataTable({
           </colgroup>}
           <thead>
             <tr>
-              {selectable && <th scope="col" className="dt-selection">
+              {selectable && <th scope="col" className={`dt-selection ${fixedLayout ? 'dt-pinned-left' : ''}`}
+                style={fixedLayout ? { left: 0 } : undefined}>
                 <SelectionHeader checked={pageIds.length > 0 && selectedPageCount === pageIds.length}
                   mixed={selectedPageCount > 0 && selectedPageCount < pageIds.length}
                   onChange={togglePage} label={words.selectPage} />
@@ -557,7 +600,8 @@ export function DataTable({
                 const canSort = (sortable || column.sortable) && column.sortable !== false;
                 const direction = sort?.field === column.field ? sort.direction : null;
                 return <th scope="col" key={column.field}
-                  className={resizableColumns ? 'dt-resizable-heading' : undefined}
+                  className={[resizableColumns && 'dt-resizable-heading', pinClass(column)].filter(Boolean).join(' ') || undefined}
+                  style={pinStyle(column)}
                   aria-sort={direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : undefined}>
                   {canSort
                     ? <button type="button" className="dt-sort" onClick={() => changeSort(column)}>
@@ -583,17 +627,21 @@ export function DataTable({
                     }} />}
                 </th>;
               })}
-              {hasActions && <th scope="col">{actionsHeader}</th>}
+              {hasActions && <th scope="col" className={pinActions ? 'dt-pinned-right' : undefined}
+                style={pinActions ? { right: 0 } : undefined}>{actionsHeader}</th>}
             </tr>
             {visibleColumns.some((column) => column.filterable) && <tr className="dt-filter-row">
-              {selectable && <th role="presentation" />}
-              {visibleColumns.map((column) => <th role="presentation" key={column.field}>
+              {selectable && <th role="presentation" className={fixedLayout ? 'dt-pinned-left' : undefined}
+                style={fixedLayout ? { left: 0 } : undefined} />}
+              {visibleColumns.map((column) => <th role="presentation" key={column.field}
+                className={pinClass(column)} style={pinStyle(column)}>
                 {column.filterable && <input className="dt-control" type="search"
                   aria-label={words.filter(column.headerName ?? column.field)}
                   value={filters[column.field] ?? ''} placeholder={words.filterPlaceholder}
                   onChange={(event) => changeFilter(column.field, event.target.value)} />}
               </th>)}
-              {hasActions && <th role="presentation" />}
+              {hasActions && <th role="presentation" className={pinActions ? 'dt-pinned-right' : undefined}
+                style={pinActions ? { right: 0 } : undefined} />}
             </tr>}
           </thead>
           <tbody>
@@ -607,7 +655,8 @@ export function DataTable({
                 const row = saveMode ? drafts[key] ?? originalRow : originalRow;
                 const disabled = Boolean(saving[key]);
                 return <tr key={id} aria-selected={selectable ? selectedSet.has(key) : undefined}>
-                  {selectable && <td className="dt-selection">
+                  {selectable && <td className={`dt-selection ${fixedLayout ? 'dt-pinned-left' : ''}`}
+                    style={fixedLayout ? { left: 0 } : undefined}>
                     <input type="checkbox" checked={selectedSet.has(key)}
                       aria-label={words.selectRow(id)}
                       onChange={() => changeSelection(selectedSet.has(key)
@@ -617,7 +666,8 @@ export function DataTable({
                   {visibleColumns.map((column) => {
                     const fieldError = validation[key]?.[column.field];
                     const errorId = `${errorPrefix}-${key}-${column.field}`;
-                    return <td key={column.field} data-label={column.headerName ?? column.field}>
+                    return <td key={column.field} data-label={column.headerName ?? column.field}
+                      className={pinClass(column)} style={pinStyle(column)}>
                       {cellContent({ row, column, rowIndex, imageView, imageOpenLabel: words.imageOpen,
                         onImageOpen: (value, currentRow, imageColumn) => {
                           openImage(value, currentRow, imageColumn, id);
@@ -628,7 +678,9 @@ export function DataTable({
                       {fieldError && <span className="dt-field-error" id={errorId}>{fieldError}</span>}
                     </td>;
                   })}
-                  {hasActions && <td data-label={actionsHeader}>
+                  {hasActions && <td data-label={actionsHeader}
+                    className={pinActions ? 'dt-pinned-right' : undefined}
+                    style={pinActions ? { right: 0 } : undefined}>
                     <div className="dt-actions">
                       {actionItems.map((action, index) => <ActionButton key={action.id ?? index}
                         action={action} disabled={disabled}

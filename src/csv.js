@@ -12,8 +12,8 @@ export function toCsv(rows, columns) {
   return `\uFEFF${lines.join('\r\n')}\r\n`;
 }
 
-export function downloadCsv(csv, filename = 'datos.csv') {
-  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+export function downloadBlob(blob, filename = 'datos.csv') {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.download = filename.toLowerCase().endsWith('.csv') ? filename : `${filename}.csv`;
@@ -21,4 +21,8 @@ export function downloadCsv(csv, filename = 'datos.csv') {
   link.click();
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+export function downloadCsv(csv, filename = 'datos.csv') {
+  downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), filename);
 }

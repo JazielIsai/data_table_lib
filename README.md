@@ -268,6 +268,7 @@ Los tipos de celda son `text`, `date`, `number`, `file`, `select` y `button`. Lo
 | `defaultColumnVisibility`, `columnVisibility`, `onColumnVisibilityChange` | objeto, objeto, función | Visibilidad inicial o controlada por campo; `false` oculta. |
 | `columnPreferencesKey` | `string` | Guarda preferencias de columnas en `localStorage`. |
 | `resizableColumns`, `columnWidths`, `defaultColumnWidths`, `onColumnWidthsChange` | booleano, mapa de anchos, mapa, función | Ajuste del ancho con puntero o flechas. `columnWidths` permite controlarlo desde la aplicación; la clave de preferencias guarda los anchos locales. |
+| `pinActions` | `boolean` | Mantiene la columna de acciones pegada al borde derecho durante el desplazamiento horizontal. |
 | `csvExport` | objeto | Muestra «Exportar CSV». Configura `filename`, `scope` (`filtered`, `page` o `selected`) y opcionalmente `onExport(rows, context)`. |
 | `loading`, `error` | `boolean`, `ReactNode` | Estado de carga y aviso de error. |
 | `emptyMessage`, `loadingMessage` | `ReactNode` | Textos de estado. |
@@ -295,13 +296,15 @@ Los nombres anteriores `getColumns`, `getRows`, `getButtons` y `onCaption` sigue
 
 Activa `resizableColumns` para arrastrar el separador del encabezado. También se puede enfocar y ajustar con las flechas izquierda y derecha (Mayús cambia 25 px). Cada columna admite `width`, `minWidth`, `maxWidth` y `resizable: false`. `columnPreferencesKey` conserva los anchos en el navegador; usa `columnWidths` y `onColumnWidthsChange` si tu aplicación administra ese estado. Puedes cambiar la etiqueta con `labels.resizeColumn`.
 
+Usa `pinned: 'left'` o `pinned: 'right'` en una columna para mantenerla visible al desplazarse horizontalmente. `pinActions` fija las acciones a la derecha. Las columnas fijadas se agrupan en sus bordes; el panel de columnas sólo permite reordenarlas dentro de su grupo. Es recomendable definir `width` en esas columnas para que el desplazamiento sea predecible.
+
 ```jsx
 <Table columns={columns} rows={rows} resizableColumns
   columnPreferencesKey="pedidos-columnas"
   csvExport={{ filename: 'pedidos.csv', scope: 'filtered' }} />
 ```
 
-El CSV integrado contiene las columnas visibles, omite botones y protege los valores que una hoja de cálculo podría interpretar como fórmulas. `filtered` exporta las filas cargadas tras búsqueda, filtros y ordenamiento; `page` exporta sólo la página actual; `selected` exporta las filas cargadas que estén seleccionadas. Con operaciones delegadas al servidor, estos alcances sólo cubren las filas cargadas. Usa `onExport(rows, context)` para solicitar al servidor un archivo completo; el callback sustituye la descarga integrada.
+El CSV integrado contiene las columnas visibles, omite botones y protege los valores que una hoja de cálculo podría interpretar como fórmulas. `filtered` exporta las filas cargadas tras búsqueda, filtros y ordenamiento; `page` exporta sólo la página actual; `selected` exporta las filas cargadas que estén seleccionadas. Con operaciones delegadas al servidor, estos alcances sólo cubren las filas cargadas. Usa `onExport(rows, context)` para solicitar al servidor un archivo completo; el callback sustituye la descarga integrada. Puede devolver un `Blob` o `{ blob, filename }` para que la librería lo descargue automáticamente. Mientras espera, el botón muestra progreso y bloquea una segunda solicitud; si falla, se muestra un aviso. También puedes devolver `void` y gestionar la descarga desde tu aplicación. `toCsv(rows, columns)` está disponible como utilidad pública para construir el archivo.
 
 ## Diseño, accesibilidad y desarrollo
 

@@ -1,4 +1,4 @@
-import { Table, TableEdit, type TableColumn, type TableSort } from '@isai_dev/data_table_lib';
+import { Table, TableEdit, toCsv, type TableColumn, type TableSort } from '@isai_dev/data_table_lib';
 
 interface Person { id: number; name: string; role: string; photo?: { src: string; alt: string } }
 const people: Person[] = [{ id: 1, name: 'Ana', role: 'admin',
@@ -8,6 +8,7 @@ const columns: TableColumn<Person>[] = [
     previewable: true, imageAlt: (_value, row) => `Photo of ${row.name}`,
     onImageClick: (_value, row) => { row.name; } },
   { field: 'name', headerName: 'Name', sortable: true, filterable: true, hideable: false,
+    pinned: 'left', width: 180,
     type: 'text', validate: (value) => value ? null : 'Required' },
   { field: 'role', headerName: 'Role', type: 'select',
     options: [{ value: 'admin', label: 'Administrator' }] }
@@ -17,8 +18,9 @@ const sort: TableSort = { field: 'name', direction: 'asc' };
 export const examples = <>
   <Table columns={columns} rows={people} sortable searchable paginationEnabled
     resizableColumns defaultColumnWidths={{ name: 180 }}
+    pinActions
     csvExport={{ filename: 'people.csv', scope: 'filtered',
-      onExport: (rows, context) => { rows[0]?.name; context.columns[0]?.field; } }}
+      onExport: (rows, context) => new Blob([toCsv(rows, context.columns)]) }}
     sort={sort} onSortChange={(next) => { next?.direction; }}
     defaultImageView="avatar" allowImageViewChange
     defaultLayout="gallery" allowLayoutChange

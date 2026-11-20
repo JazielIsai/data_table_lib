@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table } from '@isai_dev/data_table_lib';
+import { Table, toCsv } from '@isai_dev/data_table_lib';
 import { initialPeople } from './data.js';
 
 // Simula la respuesta de una API. Reemplaza esta función por fetch('/api/people?...').
@@ -22,7 +22,7 @@ async function loadPeople({ search, filters, sort, pagination }) {
 }
 
 const columns = [
-  { field: 'name', headerName: 'Nombre', sortable: true },
+  { field: 'name', headerName: 'Nombre', sortable: true, pinned: 'left', width: 180 },
   { field: 'team', headerName: 'Equipo', sortable: true, filterable: true },
   { field: 'status', headerName: 'Estado' }
 ];
@@ -53,9 +53,15 @@ export default function RemoteExample() {
   }, [search, filters, sort, pagination]);
 
   return <>
-    <p>La consulta simulada prepara los datos; la tabla sólo muestra la página recibida.</p>
+    <p>La consulta simulada prepara los datos; la tabla sólo muestra la página recibida. La exportación consulta todas las filas filtradas.</p>
     <Table columns={columns} rows={rows} rowCount={rowCount}
       caption="Datos remotos" loading={loading} error={error}
+      resizableColumns
+      csvExport={{ filename: 'personas-remotas.csv', onExport: async (_loadedRows, context) => {
+        const all = await loadPeople({ ...context,
+          pagination: { pageIndex: 0, pageSize: context.rowCount || 1 } });
+        return new Blob([toCsv(all.rows, context.columns)], { type: 'text/csv;charset=utf-8' });
+      } }}
       searchable paginationEnabled manualSorting manualFiltering manualPagination
       sort={sort} onSortChange={setSort}
       search={search} onSearchChange={setSearch}

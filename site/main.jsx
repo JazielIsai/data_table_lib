@@ -21,7 +21,7 @@ const demos = [
     id: 'local',
     label: 'Datos locales',
     title: 'Explora una tabla completa',
-    description: 'Busca, cambia el ancho de las columnas con el ratón o las flechas y exporta el resultado a CSV.',
+    description: 'Busca, fija columnas, cambia su ancho con el ratón o las flechas y exporta el resultado a CSV.',
     Component: BasicExample,
     code: `import { Table } from '@isai_dev/data_table_lib';
 import '@isai_dev/data_table_lib/style.css';
@@ -33,6 +33,7 @@ import '@isai_dev/data_table_lib/style.css';
   paginationEnabled
   selectable
   resizableColumns
+  pinActions
   columnPreferencesKey="mi-tabla-columnas"
   csvExport={{ filename: 'datos.csv', scope: 'filtered' }}
 />`
@@ -88,7 +89,7 @@ import '@isai_dev/data_table_lib/style.css';
     id: 'remote',
     label: 'Datos remotos',
     title: 'Conecta tu propia API',
-    description: 'Delega búsqueda, ordenamiento y paginación a tu servidor.',
+    description: 'Delega búsqueda, ordenamiento y paginación a tu servidor. Exporta todas las filas filtradas aunque sólo haya una página cargada.',
     Component: RemoteExample,
     code: `<Table
   rows={response.rows}
@@ -96,6 +97,12 @@ import '@isai_dev/data_table_lib/style.css';
   manualSorting
   manualFiltering
   manualPagination
+  resizableColumns
+  csvExport={{ onExport: async (_rows, context) => {
+    const response = await fetch(buildExportUrl(context));
+    if (!response.ok) throw new Error('No se pudo exportar');
+    return response.blob();
+  } }}
   sort={sort}
   onSortChange={setSort}
   pagination={pagination}

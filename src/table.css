@@ -18,6 +18,13 @@
 .dt-table { width: 100%; min-width: 28rem; border-collapse: collapse; text-align: left; }
 .dt-table-resizable { table-layout: fixed; }
 .dt-table-resizable th, .dt-table-resizable td { overflow-wrap: anywhere; }
+.dt-table .dt-pinned-left, .dt-table .dt-pinned-right { position: sticky; z-index: 1; background: var(--dt-surface); }
+.dt-table thead .dt-pinned-left, .dt-table thead .dt-pinned-right { z-index: 2; }
+.dt-table tbody tr:hover .dt-pinned-left, .dt-table tbody tr:hover .dt-pinned-right { background: var(--dt-surface-hover); }
+.dt-table tbody tr[aria-selected="true"] .dt-pinned-left,
+.dt-table tbody tr[aria-selected="true"] .dt-pinned-right { background: color-mix(in srgb, var(--dt-accent) 10%, var(--dt-surface)); }
+.dt-table .dt-pinned-left { box-shadow: 1px 0 var(--dt-separator); }
+.dt-table .dt-pinned-right { box-shadow: -1px 0 var(--dt-separator); }
 .dt-resizable-heading { position: relative; padding-right: 25px !important; }
 .dt-resize-handle { position: absolute; top: 0; right: 0; bottom: 0; width: 12px; cursor: col-resize; touch-action: none; }
 .dt-resize-handle::after { content: ''; position: absolute; top: 20%; bottom: 20%; left: 5px; width: 2px; border-radius: 2px; background: var(--dt-separator); }

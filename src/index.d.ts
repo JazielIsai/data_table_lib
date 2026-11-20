@@ -28,6 +28,7 @@ export interface TableColumn<Row extends TableRow = TableRow> {
   hideable?: boolean;
   reorderable?: boolean;
   resizable?: boolean;
+  pinned?: 'left' | 'right';
   width?: number;
   minWidth?: number;
   maxWidth?: number;
@@ -117,6 +118,8 @@ export interface TableLabels {
   bulkActions?: string;
   clearSelection?: string;
   exportCsv?: string;
+  exportingCsv?: string;
+  exportError?: string;
   resizeColumn?: (header: string) => string;
 }
 export interface TableCsvExport<Row extends TableRow = TableRow> {
@@ -131,7 +134,8 @@ export interface TableCsvExport<Row extends TableRow = TableRow> {
     sort: TableSort | null;
     pagination: TablePagination;
     rowCount: number;
-  }) => void | Promise<void>;
+  }) => void | Blob | { blob: Blob; filename?: string }
+    | Promise<void | Blob | { blob: Blob; filename?: string }>;
 }
 interface BaseProps<Row extends TableRow> {
   columns?: TableColumn<Row>[];
@@ -179,6 +183,7 @@ interface BaseProps<Row extends TableRow> {
   columnWidths?: Record<string, number>;
   defaultColumnWidths?: Record<string, number>;
   onColumnWidthsChange?: (widths: Record<string, number>) => void;
+  pinActions?: boolean;
   csvExport?: TableCsvExport<Row>;
   loading?: boolean;
   error?: ReactNode;
@@ -213,3 +218,4 @@ export interface TableEditProps<Row extends TableRow = TableRow> extends BasePro
 }
 export declare function Table<Row extends TableRow = TableRow>(props: TableProps<Row>): ReactNode;
 export declare function TableEdit<Row extends TableRow = TableRow>(props: TableEditProps<Row>): ReactNode;
+export declare function toCsv<Row extends TableRow>(rows: Row[], columns: TableColumn<Row>[]): string;
