@@ -2,9 +2,9 @@
 
 **Tablas React que también se convierten en galerías de fotos, con edición y preferencias listas para usar.**
 
-[![Vista visual de Data Table Lib: los mismos datos como tabla y galería](docs/social-preview.png)](https://jazielisai.github.io/data_table_lib/#demo)
+[![Vista visual de Data Table Lib: los mismos datos como tabla y galería](https://jazielisai.github.io/data_table_lib/social-preview.png)](https://jazielisai.github.io/data_table_lib/#demo)
 
-[Probar la demo](https://jazielisai.github.io/data_table_lib/#demo) · [Ver tres ejemplos completos](./examples/README.md) · [Instalar desde npm](https://www.npmjs.com/package/@isai_dev/data_table_lib)
+[Probar la demo](https://jazielisai.github.io/data_table_lib/#demo) · [Ver tres ejemplos completos](https://github.com/JazielIsai/data_table_lib/tree/main/examples) · [Instalar desde npm](https://www.npmjs.com/package/@isai_dev/data_table_lib)
 
 ```bash
 npm install @isai_dev/data_table_lib@next
@@ -65,7 +65,7 @@ También puedes instalar el archivo generado con `npm install /ruta/al/archivo.t
 
 ## Ejemplos ejecutables
 
-`npm run examples` compila la librería y sirve [cinco ejemplos independientes](./examples/README.md) en `http://localhost:5173/examples/`: catálogo de productos, directorio con fotos, panel de datos remotos, tabla local y edición con validación. Cada ejemplo importa las entradas públicas del paquete, igual que una aplicación consumidora.
+`npm run examples` compila la librería y sirve [cinco ejemplos independientes](https://github.com/JazielIsai/data_table_lib/tree/main/examples) en `http://localhost:5173/examples/`: catálogo de productos, directorio con fotos, panel de datos remotos, tabla local y edición con validación. Cada ejemplo importa las entradas públicas del paquete, igual que una aplicación consumidora.
 
 ## Fotos, galería y acciones (vista previa de la versión 2)
 
