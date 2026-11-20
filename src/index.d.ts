@@ -196,6 +196,18 @@ interface BaseProps<Row extends TableRow> {
   onColumnWidthsChange?: (widths: Record<string, number>) => void;
   pinActions?: boolean;
   csvExport?: TableCsvExport<Row>;
+  /** Controlled view. Each field feeds the matching piece unless that piece has its own controlled prop. */
+  view?: TableView;
+  /** Initial view for uncontrolled state. */
+  defaultView?: TableView;
+  /** Receives the whole view after any change: from the viewer, a saved view or a shared link. */
+  onViewChange?: (view: TableView) => void;
+  /** localStorage key for named views. Shows the Views menu. */
+  viewsKey?: string;
+  /** Adds "copy link" and applies a view link when the table mounts. */
+  shareableViews?: boolean | { param?: string };
+  /** Keeps the view in the URL with history.replaceState. Off by default; routers may rewrite the URL. */
+  syncViewToUrl?: boolean;
   loading?: boolean;
   error?: ReactNode;
   loadingMessage?: ReactNode;

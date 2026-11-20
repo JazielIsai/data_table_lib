@@ -648,3 +648,52 @@ test('view links keep other query params and the hash', () => {
   assert.equal(withViewParam(href, 'view', null), 'http://x.test/app?tab=2#top');
   assert.equal(withViewParam(href, 'view', encodeView({})), 'http://x.test/app?tab=2#top');
 });
+
+const h = React.createElement;
+
+test('a view link applies on mount and asks manual tables to refetch', () => {
+  window.history.replaceState(null, '', '/?view=' + encodeView({ search: 'ana',
+    filters: { team: 'Ventas' }, sort: { field: 'name', direction: 'desc' } }));
+  const calls = [];
+  render(h(Table, { columns: [{ field: 'name', sortable: true }, { field: 'team', filterable: true }],
+    rows: [], searchable: true, shareableViews: true, manualFiltering: true, manualSorting: true,
+    onSearchChange: (v) => calls.push(['search', v]),
+    onFiltersChange: (v) => calls.push(['filters', v]),
+    onSortChange: (v) => calls.push(['sort', v]) }));
+  assert.equal(screen.getByRole('searchbox', { name: 'Buscar en la tabla' }).value, 'ana');
+  assert.equal(screen.getByRole('searchbox', { name: 'Filtrar team' }).value, 'Ventas');
+  assert.deepEqual(calls.sort(), [['filters', { team: 'Ventas' }], ['search', 'ana'],
+    ['sort', { field: 'name', direction: 'desc' }]]);
+  window.history.replaceState(null, '', '/');
+});
+
+test('individual controlled props win over views and read-only pieces are untouched', () => {
+  window.history.replaceState(null, '', '/?view=' + encodeView({ sort: { field: 'name', direction: 'desc' } }));
+  render(h(Table, { columns: [{ field: 'name', sortable: true }], rows: [{ name: 'b' }, { name: 'a' }],
+    shareableViews: true, sort: { field: 'name', direction: 'asc' } }));
+  assert.deepEqual(screen.getAllByRole('cell').map((c) => c.textContent), ['a', 'b']);
+  window.history.replaceState(null, '', '/');
+});
+
+test('onViewChange receives the whole view; defaultView seeds state', () => {
+  const seen = [];
+  render(h(Table, { columns: [{ field: 'name' }, { field: 'team' }], rows: [], searchable: true,
+    defaultView: { columnVisibility: { team: false } }, onViewChange: (v) => seen.push(v) }));
+  assert.ok(!screen.queryByRole('columnheader', { name: 'team' }), 'team stays hidden');
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'x' } });
+  assert.equal(seen.at(-1).search, 'x');
+  assert.deepEqual(seen.at(-1).columnVisibility, { team: false });
+});
+
+test('a controlled view drives uncontrolled pieces', () => {
+  render(h(Table, { columns: [{ field: 'name' }], rows: [], searchable: true,
+    view: { search: 'luis' }, onViewChange: () => {} }));
+  assert.equal(screen.getByRole('searchbox').value, 'luis');
+});
+
+test('without shareableViews the url view is ignored', () => {
+  window.history.replaceState(null, '', '/?view=' + encodeView({ search: 'zzz' }));
+  render(h(Table, { columns: [{ field: 'name' }], rows: [], searchable: true }));
+  assert.equal(screen.getByRole('searchbox').value, '');
+  window.history.replaceState(null, '', '/');
+});

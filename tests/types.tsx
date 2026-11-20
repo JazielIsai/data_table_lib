@@ -52,3 +52,9 @@ const sharedView: TableView = { search: 'Ana', sort, layout: 'gallery', imageVie
 const encodedView: string = encodeView(sharedView);
 const decodedView: TableView | null = decodeView(encodedView);
 decodedView?.columnWidths;
+export const viewExamples = <>
+  <Table columns={columns} rows={people} view={sharedView}
+    onViewChange={(next: TableView) => { next.search; }} viewsKey="people-views"
+    shareableViews={{ param: 'v' }} syncViewToUrl />
+  <TableEdit columns={columns} rows={people} defaultView={{ search: 'Ana' }} shareableViews />
+</>;
