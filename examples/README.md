@@ -15,7 +15,8 @@ Abre [http://localhost:5173/examples/](http://localhost:5173/examples/). El scri
 | [EditableExample.jsx](./EditableExample.jsx) | Borradores por fila, validación, guardar y cancelar. |
 | [RemoteExample.jsx](./RemoteExample.jsx) | Estado controlado y operaciones delegadas a una consulta simulada. |
 | [PhotoExample.jsx](./PhotoExample.jsx) | Fotos en cuatro vistas, visor ampliado, columnas personalizables e iconos accesibles. |
+| [ViewsExample.jsx](./ViewsExample.jsx) | Vistas con nombre guardadas en el navegador y enlaces que reproducen búsqueda, filtros, columnas y presentación. |
 
 La consulta de `RemoteExample.jsx` usa datos locales y una breve espera para que puedas ejecutarla sin servidor. En una aplicación real, reemplaza `loadPeople` por una petición a tu API que devuelva `{ rows, total }`; conserva `manualSorting`, `manualFiltering`, `manualPagination` y los callbacks de estado. El [README principal](../README.md#datos-del-servidor) incluye un ejemplo con `fetch` y cancelación de peticiones.
 
-Los cuatro componentes son independientes. Puedes copiar uno a tu aplicación, instalar el paquete y ajustar los datos, columnas y callbacks. El ejemplo de fotos inicia en galería y permite ordenar, filtrar, seleccionar varias filas y volver a la tabla. Recuerda la presentación elegida en el navegador.
+Los cinco componentes son independientes. Puedes copiar uno a tu aplicación, instalar el paquete y ajustar los datos, columnas y callbacks. El ejemplo de fotos inicia en galería y permite ordenar, filtrar, seleccionar varias filas y volver a la tabla. Recuerda la presentación elegida en el navegador.

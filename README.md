@@ -44,7 +44,7 @@ También puedes instalar el archivo generado con `npm install /ruta/al/archivo.t
 
 ## Ejemplos ejecutables
 
-`npm run examples` compila la librería y sirve [cuatro ejemplos independientes](./examples/README.md) en `http://localhost:5173/examples/`: tabla local, edición con validación, consulta simulada del servidor y fotos con acciones. Cada ejemplo importa las entradas públicas del paquete, igual que una aplicación consumidora.
+`npm run examples` compila la librería y sirve [cinco ejemplos independientes](./examples/README.md) en `http://localhost:5173/examples/`: tabla local, edición con validación, consulta simulada del servidor, fotos con acciones y vistas guardadas. Cada ejemplo importa las entradas públicas del paquete, igual que una aplicación consumidora.
 
 ## Fotos, galería y acciones (vista previa de la versión 2)
 
@@ -91,6 +91,43 @@ Cuando las imágenes son el contenido principal, `defaultLayout="gallery"` muest
 `allowColumnCustomization` muestra un panel para ocultar y mover columnas con teclado o ratón. `hideable: false` y `reorderable: false` bloquean esos cambios para una columna; `hidden: true` la oculta siempre. El panel impide ocultar la última columna visible. `columnPreferencesKey` guarda el orden y la visibilidad en `localStorage` del navegador; usa una clave única por tabla. Si no pasas la clave, la elección sólo dura mientras la tabla está montada. La aplicación también puede controlar el estado con `columnOrder` / `onColumnOrderChange` y `columnVisibility` / `onColumnVisibilityChange`; `defaultColumnOrder` y `defaultColumnVisibility` definen los valores iniciales no controlados. Las columnas nuevas se añaden al final del orden guardado. La búsqueda global omite las columnas ocultas por el usuario.
 
 Las acciones admiten `iconName`: `view`, `edit`, `delete`, `download`, `more`, `check` y `close`. También puedes pasar tu propio componente con `icon`. `iconOnly` oculta el texto visualmente, pero conserva el nombre accesible tomado de `label` o `ariaLabel`. `variant` acepta `default`, `primary` o `danger`; `iconPosition` acepta `start` o `end`. Los iconos integrados son SVG y no requieren una dependencia adicional.
+
+## Vistas guardadas y compartibles
+
+Quien usa la tabla puede guardar su configuración actual (búsqueda, filtros, orden, columnas visibles, orden y ancho de columnas, tabla o galería y vista de fotos) con un nombre, y compartirla con un enlace. No necesitas backend.
+
+```jsx
+<Table columns={columns} rows={rows} searchable sortable allowColumnCustomization
+  allowLayoutChange viewsKey="catalogo-vistas" shareableViews />
+```
+
+- `viewsKey` muestra el menú «Vistas» para guardar, aplicar y eliminar vistas con nombre. Se guardan en `localStorage` bajo esa clave.
+- `shareableViews` añade «Copiar enlace» y aplica la vista del enlace cuando la tabla se monta. El enlace solo cambia el parámetro `?view=` y conserva la ruta, los demás parámetros y el hash. Usa `shareableViews={{ param: 'v' }}` si hay dos tablas en la misma página.
+- `syncViewToUrl` mantiene la vista en la dirección mientras se usa la tabla, con `history.replaceState` y sin añadir entradas al historial. Está apagado por defecto: si tu aplicación usa un router (React Router, Next) que reescribe la URL, prefiere `shareableViews` o controla la vista tú.
+
+El enlace solo lleva el estado, no las filas. Con `manualFiltering`, `manualSorting` o `manualPagination`, al aplicar una vista la tabla llama `onSearchChange`, `onFiltersChange` y `onSortChange` para que pidas los datos de nuevo. La paginación y la selección no forman parte de la vista.
+
+Una vista que no coincide con las columnas actuales se ajusta sola: se ignoran las columnas desconocidas, las nuevas aparecen al final y nunca se ocultan columnas con `hideable: false`. Un enlace inválido o de otra versión se ignora.
+
+Si una prop individual está controlada (`sort`, `search`, `columnOrder`…), tiene prioridad sobre la vista; si además no tiene callback, aplicar una vista no la cambia.
+
+Para guardar vistas en tu servidor, controla la vista y usa las funciones de codificación:
+
+```jsx
+import { Table, encodeView, decodeView } from '@isai_dev/data_table_lib';
+
+const [view, setView] = useState(() => decodeView(savedText) ?? {});
+<Table columns={columns} rows={rows} view={view}
+  onViewChange={(next) => { setView(next); saveToServer(encodeView(next)); }} />
+```
+
+| Prop | Tipo | Uso |
+| --- | --- | --- |
+| `viewsKey` | `string` | Clave de `localStorage` para las vistas con nombre; muestra el menú «Vistas». |
+| `shareableViews` | `boolean \| { param?: string }` | «Copiar enlace» y lectura del enlace al montar. |
+| `syncViewToUrl` | `boolean` | Refleja la vista en la URL en vivo. |
+| `view`, `onViewChange` | `TableView`, función | Vista controlada; `onViewChange` recibe la vista completa. |
+| `defaultView` | `TableView` | Vista inicial no controlada. |
 
 ## Página de presentación
 
