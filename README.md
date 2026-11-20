@@ -65,7 +65,7 @@ También puedes instalar el archivo generado con `npm install /ruta/al/archivo.t
 
 ## Ejemplos ejecutables
 
-`npm run examples` compila la librería y sirve [seis ejemplos independientes](https://github.com/JazielIsai/data_table_lib/tree/main/examples) en `http://localhost:5173/examples/`: catálogo de productos, directorio con fotos, panel de datos remotos, tabla local, edición con validación y vistas guardadas. Cada ejemplo importa las entradas públicas del paquete, igual que una aplicación consumidora.
+`npm run examples` compila la librería y sirve [siete ejemplos independientes](https://github.com/JazielIsai/data_table_lib/tree/main/examples) en `http://localhost:5173/examples/`: catálogo de productos, directorio con fotos, panel de datos remotos, tabla local, edición con validación, vistas guardadas y controles de formulario. Cada ejemplo importa las entradas públicas del paquete, igual que una aplicación consumidora.
 
 ## Fotos, galería y acciones (vista previa de la versión 2)
 
@@ -296,7 +296,30 @@ function PeopleEditor() {
 }
 ```
 
-Los tipos de celda son `text`, `date`, `number`, `file`, `select` y `button`. Los valores de inputs llegan como cadenas, incluso con `type="number"`; conviértelos en tu callback si tu modelo necesita números. Para archivos, usa `event.target.files` en modo inmediato; en modo guardar, el borrador contiene el primer `File` o `null`. El input de archivo se limpia al cancelar o guardar.
+Los tipos de celda incluyen `text`, `search`, `email`, `tel`, `url`, `password`, `textarea`, `date`, `time`, `datetime-local`, `number`, `range`, `color`, `file`, `select` y `button`. Para inputs de texto usa `placeholder` y `maxLength`; `textarea` admite `rows`; `number` y `range` admiten `min`, `max` y `step`; `file` admite `accept` y `multiple`. Los valores de inputs numéricos llegan como cadenas; conviértelos en tu callback si tu modelo necesita números. Para archivos, usa `event.target.files` en modo inmediato; en modo guardar, el borrador contiene el primer `File` o `null`, o un array de archivos con `multiple: true`. El input de archivo se limpia al cancelar o guardar.
+
+### Casillas y opciones
+
+`checkbox` y `switch` representan valores booleanos. `radio` selecciona una opción y `checkbox-group` guarda varias en un array. Ambos grupos usan `options: [{ value, label }]`. Funcionan como controles deshabilitados en `Table` y como controles editables en `TableEdit`. Si una columna de `TableEdit` debe permanecer fija, usa `editable: false`. Los botones de `type: 'button'` pueden usarse en ambas tablas con `onClick(event, row)`.
+
+```jsx
+const columns = [
+  { field: 'approved', headerName: 'Aprobado', type: 'checkbox' },
+  { field: 'alerts', headerName: 'Avisos', type: 'switch' },
+  { field: 'role', headerName: 'Rol', type: 'radio',
+    options: [{ value: 'reader', label: 'Lector' },
+      { value: 'editor', label: 'Editor' }] },
+  { field: 'channels', headerName: 'Canales', type: 'checkbox-group',
+    options: [{ value: 'email', label: 'Correo' },
+      { value: 'app', label: 'App' }] },
+  { field: 'notes', headerName: 'Notas', type: 'textarea', rows: 3 }
+];
+
+<TableEdit columns={columns} rows={rows} editMode="save"
+  onSave={(draft, original) => saveRow(draft, original)} />;
+```
+
+En modo inmediato, define `onValueChange(value, row, event)` en la columna y actualiza `rows` desde tu aplicación. Recibe un booleano para `checkbox`/`switch`, el valor de la opción para `radio`, un array para `checkbox-group` y una cadena para los inputs de texto y numéricos. `onValueChange` tiene prioridad sobre `onChange(event, row)`; este último conserva la API anterior. En modo guardar, `onSave` recibe el borrador completo y puedes validar cada campo con `validate(value, draftRow)`. La [demo de inputs](https://jazielisai.github.io/data_table_lib/#demo) permite alternar entre **Ver** y **Editar**.
 
 `renderCell(value, row, rowIndex)` personaliza el contenido y tiene prioridad sobre `type`. Si implementas edición con `renderCell`, el control y sus cambios quedan a cargo de tu renderizador.
 
@@ -346,7 +369,7 @@ Los tipos de celda son `text`, `date`, `number`, `file`, `select` y `button`. Lo
 }} />
 ```
 
-Cada columna acepta `field`, `headerName`, `hidden`, `hideable`, `reorderable`, `sortable`, `filterable`, `searchable`, `sortFn`, `filterFn`, `type`, `options`, `placeholder`, `renderCell`, `validate`, `onChange`, `onClick`, `label`, `icon`, `ariaLabel` y `style`. Para `type: 'image'`, también acepta `imageAlt`, `imageFit`, `imagePosition`, `imageFallback`, `previewable` y `onImageClick`. Cada acción acepta `id`, `label`, `icon`, `iconName`, `iconOnly`, `iconPosition`, `variant`, `ariaLabel`, `className`, `style`, `disabled` y `onClick`. Si sólo muestra un icono, proporciona un `label` de texto o `ariaLabel`.
+Cada columna acepta `field`, `headerName`, `hidden`, `hideable`, `reorderable`, `sortable`, `filterable`, `searchable`, `sortFn`, `filterFn`, `type`, `editable`, `options`, `placeholder`, `min`, `max`, `step`, `maxLength`, `rows`, `accept`, `multiple`, `renderCell`, `validate`, `onChange`, `onValueChange`, `onClick`, `label`, `icon`, `ariaLabel` y `style`. Para `type: 'image'`, también acepta `imageAlt`, `imageFit`, `imagePosition`, `imageFallback`, `previewable` y `onImageClick`. Cada acción acepta `id`, `label`, `icon`, `iconName`, `iconOnly`, `iconPosition`, `variant`, `ariaLabel`, `className`, `style`, `disabled` y `onClick`. Si sólo muestra un icono, proporciona un `label` de texto o `ariaLabel`.
 
 Los nombres anteriores `getColumns`, `getRows`, `getButtons` y `onCaption` siguen disponibles. En `TableEdit`, `getButtons` conserva `onClick(event, row)`; el prop nuevo `actions` usa `onClick(row, event)`. Si pasas ambas versiones, prevalece el nombre nuevo.
 

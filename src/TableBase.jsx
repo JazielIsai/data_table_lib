@@ -39,42 +39,97 @@ function ActionButton({ action, onClick, disabled }) {
   </button>;
 }
 
-function cellContent({ row, column, rowIndex, imageView, imageOpenLabel, onImageOpen,
+function cellContent({ row, column, rowIndex, rowId, imageView, imageOpenLabel, onImageOpen,
   editable, saveMode, onEdit, error, errorId, disabled, fileVersion, selectOptionLabel }) {
   const value = row?.[column.field];
+  const label = column.headerName || column.field;
+  const canEdit = editable && column.editable !== false;
+  const interactive = canEdit && (saveMode || column.onChange || column.onValueChange);
   if (typeof column.renderCell === 'function') return column.renderCell(value, row, rowIndex);
   if (column.type === 'image') return <ImageCell value={value} row={row} column={column}
     view={imageView} openLabel={imageOpenLabel}
     onOpen={column.previewable || column.onImageClick ? () => onImageOpen(value, row, column) : undefined} />;
-  if (!editable) return value ?? null;
+
+  if (column.type === 'button') {
+    return <ActionButton action={column} disabled={disabled || !column.onClick}
+      onClick={(event) => column.onClick?.(event, row)} />;
+  }
+
+  if (column.type === 'checkbox' || column.type === 'switch') {
+    const checked = Boolean(value);
+    return <label className={`dt-boolean dt-boolean-${column.type}`}>
+      <input type="checkbox" name={column.field} checked={checked}
+        role={column.type === 'switch' ? 'switch' : undefined}
+        aria-label={label} aria-invalid={Boolean(error) || undefined}
+        aria-describedby={error ? errorId : undefined}
+        disabled={!interactive || disabled}
+        onChange={(event) => onEdit(event, row, column)} />
+      <span aria-hidden="true">{column.type === 'switch' ? '' : checked ? 'Sí' : 'No'}</span>
+    </label>;
+  }
+
+  if (column.type === 'radio' || column.type === 'checkbox-group') {
+    const selected = column.type === 'checkbox-group' && Array.isArray(value) ? value : [];
+    return <fieldset className="dt-choice-group" disabled={!interactive || disabled}
+      aria-invalid={Boolean(error) || undefined} aria-describedby={error ? errorId : undefined}>
+      <legend className="dt-visually-hidden">{label}</legend>
+      {(column.options ?? []).map((option) => {
+        const checked = column.type === 'radio'
+          ? String(value ?? '') === String(option.value)
+          : selected.some((item) => String(item) === String(option.value));
+        return <label key={String(option.value)} className="dt-choice">
+          <input type={column.type === 'radio' ? 'radio' : 'checkbox'}
+            name={`${column.field}-${rowId}`} value={option.value} checked={checked}
+            disabled={!interactive || disabled}
+            onChange={(event) => onEdit(event, row, column)} />
+          <span>{option.label}</span>
+        </label>;
+      })}
+    </fieldset>;
+  }
+
+  if (!canEdit) {
+    if (column.type === 'select') {
+      return column.options?.find((option) => String(option.value) === String(value))?.label
+        ?? value ?? null;
+    }
+    if (column.type === 'password') return value ? '••••••••' : null;
+    return value ?? null;
+  }
 
   const common = {
     name: column.field,
-    'aria-label': column.headerName || column.field,
+    'aria-label': label,
     'aria-invalid': Boolean(error) || undefined,
     'aria-describedby': error ? errorId : undefined,
     disabled,
     onChange: (event) => onEdit(event, row, column)
   };
 
-  if (column.type === 'button') {
-    return <ActionButton action={column} disabled={disabled}
-      onClick={(event) => column.onClick?.(event, row)} />;
-  }
   if (column.type === 'select') {
     return <select {...common} className="dt-control" value={value ?? ''}
-      disabled={disabled || (!saveMode && !column.onChange)}>
+      disabled={disabled || !interactive}>
       {value == null && <option value="" disabled>{column.placeholder ?? selectOptionLabel}</option>}
       {(column.options ?? []).map((option) =>
         <option key={String(option.value)} value={option.value}>{option.label}</option>)}
     </select>;
   }
-  if (['text', 'date', 'number', 'file'].includes(column.type)) {
+  if (column.type === 'textarea') {
+    return <textarea {...common} className="dt-control dt-textarea" rows={column.rows ?? 3}
+      maxLength={column.maxLength} placeholder={column.placeholder}
+      value={value ?? ''} readOnly={!interactive} />;
+  }
+  if (['text', 'search', 'email', 'tel', 'url', 'password', 'date', 'time',
+    'datetime-local', 'number', 'range', 'color', 'file'].includes(column.type)) {
     if (column.type === 'file') {
-      return <input {...common} key={fileVersion} className="dt-control" type="file" />;
+      return <input {...common} key={fileVersion} className="dt-control" type="file"
+        accept={column.accept} multiple={column.multiple} disabled={disabled || !interactive} />;
     }
     return <input {...common} className="dt-control" type={column.type}
-      value={value ?? ''} readOnly={!saveMode && !column.onChange} />;
+      value={value ?? (column.type === 'color' ? '#000000' : '')}
+      min={column.min} max={column.max} step={column.step}
+      maxLength={column.maxLength} placeholder={column.placeholder}
+      readOnly={!interactive} disabled={disabled || !interactive && ['range', 'color'].includes(column.type)} />;
   }
   return value ?? null;
 }
@@ -551,12 +606,31 @@ export function DataTable({
     changeSelection(next);
   };
   const updateEdit = (event, originalRow, column, id) => {
+    const key = String(id);
+    const currentValue = saveMode
+      ? drafts[key]?.[column.field] ?? originalRow?.[column.field]
+      : originalRow?.[column.field];
+    let value;
+    if (column.type === 'file') value = column.multiple
+      ? Array.from(event.target.files ?? []) : event.target.files?.[0] ?? null;
+    else if (column.type === 'checkbox' || column.type === 'switch') {
+      value = event.target.checked;
+    } else if (column.type === 'radio') {
+      value = column.options?.find((option) => String(option.value) === event.target.value)?.value
+        ?? event.target.value;
+    } else if (column.type === 'checkbox-group') {
+      const optionValue = column.options?.find((option) =>
+        String(option.value) === event.target.value)?.value ?? event.target.value;
+      const previous = Array.isArray(currentValue) ? currentValue : [];
+      value = event.target.checked
+        ? [...previous.filter((item) => String(item) !== String(optionValue)), optionValue]
+        : previous.filter((item) => String(item) !== String(optionValue));
+    } else value = event.target.value;
     if (!saveMode) {
-      column.onChange?.(event, originalRow);
+      if (column.onValueChange) column.onValueChange(value, originalRow, event);
+      else column.onChange?.(event, originalRow);
       return;
     }
-    const value = column.type === 'file' ? event.target.files?.[0] ?? null : event.target.value;
-    const key = String(id);
     const draft = { ...originalRow, ...drafts[key], [column.field]: value };
     setDrafts((current) => ({ ...current, [key]: draft }));
     setSaveErrors((current) => ({ ...current, [key]: '' }));
@@ -817,7 +891,7 @@ export function DataTable({
                     const errorId = `${errorPrefix}-${key}-${column.field}`;
                     return <td key={column.field} data-label={column.headerName ?? column.field}
                       className={pinClass(column)} style={pinStyle(column)}>
-                      {cellContent({ row, column, rowIndex, imageView, imageOpenLabel: words.imageOpen,
+                      {cellContent({ row, column, rowIndex, rowId: id, imageView, imageOpenLabel: words.imageOpen,
                         onImageOpen: (value, currentRow, imageColumn) => {
                           openImage(value, currentRow, imageColumn, id);
                         }, editable, saveMode, error: fieldError,

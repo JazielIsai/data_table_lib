@@ -35,9 +35,21 @@ export interface TableColumn<Row extends TableRow = TableRow> {
   sortable?: boolean;
   filterable?: boolean;
   searchable?: boolean;
-  type?: 'text' | 'date' | 'number' | 'file' | 'select' | 'button' | 'image';
+  type?: 'text' | 'search' | 'email' | 'tel' | 'url' | 'password' | 'textarea'
+    | 'date' | 'time' | 'datetime-local' | 'number' | 'range' | 'color'
+    | 'file' | 'select' | 'checkbox' | 'switch' | 'radio' | 'checkbox-group'
+    | 'button' | 'image';
+  /** In TableEdit, false displays the value without allowing changes. */
+  editable?: boolean;
   options?: TableOption[];
   placeholder?: string;
+  min?: number | string;
+  max?: number | string;
+  step?: number | string;
+  maxLength?: number;
+  rows?: number;
+  accept?: string;
+  multiple?: boolean;
   label?: ReactNode;
   ariaLabel?: string;
   icon?: ReactNode;
@@ -56,7 +68,11 @@ export interface TableColumn<Row extends TableRow = TableRow> {
   sortFn?: (left: unknown, right: unknown, leftRow: Row, rightRow: Row) => number;
   filterFn?: (value: unknown, filter: string, row: Row) => boolean;
   validate?: (value: unknown, row: Row) => string | null | undefined;
-  onChange?: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>, row: Row) => void;
+  onChange?: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>, row: Row) => void;
+  /** Immediate mode: receives a boolean for checkbox/switch, an array for checkbox-group,
+   * and the chosen option value for radio. Takes precedence over onChange. */
+  onValueChange?: (value: unknown, row: Row,
+    event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
   onClick?: (event: MouseEvent<HTMLButtonElement>, row: Row) => void;
 }
 export interface TableAction<Row extends TableRow = TableRow> {

@@ -6,6 +6,7 @@ import RemoteExample from './RemoteExample.jsx';
 import PhotoExample from './PhotoExample.jsx';
 import ProductExample from './ProductExample.jsx';
 import ViewsExample from './ViewsExample.jsx';
+import ControlsExample from './ControlsExample.jsx';
 import '@isai_dev/data_table_lib/style.css';
 import './styles.css';
 
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')).render(
       <section><h2>4. Tabla local</h2><BasicExample /></section>
       <section><h2>5. Edición con validación</h2><EditableExample /></section>
       <section><h2>6. Vistas guardadas y compartibles</h2><ViewsExample /></section>
+      <section><h2>7. Casillas, opciones y otros inputs</h2><ControlsExample /></section>
     </main>
   </StrictMode>
 );
