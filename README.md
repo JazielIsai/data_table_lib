@@ -4,10 +4,10 @@
 
 [![Vista visual de Data Table Lib: los mismos datos como tabla y galería](https://jazielisai.github.io/data_table_lib/social-preview.png)](https://jazielisai.github.io/data_table_lib/#demo)
 
-[Probar la demo](https://jazielisai.github.io/data_table_lib/#demo) · [Ver tres ejemplos completos](https://github.com/JazielIsai/data_table_lib/tree/main/examples) · [Versión 2 más reciente en GitHub](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.10) · [Instalar desde npm](https://www.npmjs.com/package/@isai_dev/data_table_lib)
+[Probar la demo](https://jazielisai.github.io/data_table_lib/#demo) · [Ver tres ejemplos completos](https://github.com/JazielIsai/data_table_lib/tree/main/examples) · [Release v2.0.0](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0) · [Instalar desde npm](https://www.npmjs.com/package/@isai_dev/data_table_lib)
 
 ```bash
-npm install @isai_dev/data_table_lib@next
+npm install @isai_dev/data_table_lib
 ```
 
 ```jsx
@@ -27,9 +27,9 @@ Creada por [Jaziel Isaí](https://isai-dev.com).
 
 Licencia [MIT](./LICENSE). Puedes usar, modificar y distribuir la librería conservando el aviso de copyright y la licencia.
 
-> La versión 2 está disponible como vista previa en npm mediante la etiqueta `next`. La instalación predeterminada sigue usando la versión estable.
+> La versión estable 2.0.0 está disponible con la etiqueta `latest` de npm. `next` conserva la última versión preliminar para quienes aún necesiten reproducirla.
 
-Si ya usas v0.1.x, sigue la [guía de migración a v2](./docs/MIGRACION_V2.md). Comprueba la versión de `next` antes de usar una función nueva: npm puede ir detrás del código y de la demo de GitHub.
+Si ya usas v0.1.x, sigue la [guía de migración a v2](./docs/MIGRACION_V2.md).
 
 ## Instalar y ejecutar
 
@@ -39,12 +39,6 @@ En tu proyecto:
 
 ```bash
 npm install @isai_dev/data_table_lib
-```
-
-Para probar las funciones de fotos, galería y personalización de v2:
-
-```bash
-npm install @isai_dev/data_table_lib@next
 ```
 
 Después importa los componentes y el CSS:
@@ -81,7 +75,7 @@ La interfaz integrada usa español por defecto. Define `locale="en"` en `Table` 
 
 La librería marca el contenedor con `lang="es"` o `lang="en"` para que la tecnología de asistencia pronuncie los controles en el idioma elegido. Los textos de tus filas, encabezados, opciones y acciones siguen siendo responsabilidad de tu aplicación.
 
-## Fotos, galería y acciones (vista previa de la versión 2)
+## Fotos, galería y acciones
 
 Usa `type: 'image'` para mostrar una URL o un objeto `{ src, alt }` en una columna. El desarrollador puede elegir la vista inicial: `avatar`, `thumbnail`, `large` o `hidden`. Con `allowImageViewChange`, quien usa la tabla puede cambiarla desde un selector. `imageView` y `onImageViewChange` permiten controlar la elección desde la aplicación; `defaultImageView` inicia el estado interno cuando no está controlado.
 

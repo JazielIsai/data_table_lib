@@ -182,14 +182,12 @@ function App() {
           <p className="eyebrow">Empieza en minutos</p>
           <h2 id="install-title">Instálala y úsala en tu proyecto.</h2>
           <p>Disponible en npm como <code>@isai_dev/data_table_lib</code>. Añade los componentes y estilos a tu aplicación con React 18 o 19.</p>
-          <p>La demo usa el código de desarrollo de v2. La etiqueta <code>next</code> instala la última versión preliminar publicada en npm; puede ir detrás de esta demo hasta la próxima publicación. La versión estable sigue en <code>latest</code>.</p>
+          <p>La versión estable 2.0.0 se instala con el comando predeterminado de npm. La demo muestra las mismas funciones de esta versión.</p>
           <a href="?page=docs#instalar-y-ejecutar">Leer la documentación completa</a>
         </div>
         <div className="terminal">
           <div className="terminal-heading"><span>Versión estable</span><CopyButton value="npm install @isai_dev/data_table_lib" /></div>
           <pre><code>npm install @isai_dev/data_table_lib</code></pre>
-          <div className="terminal-heading"><span>Vista previa v2</span><CopyButton value="npm install @isai_dev/data_table_lib@next" /></div>
-          <pre><code>npm install @isai_dev/data_table_lib@next</code></pre>
           <p>Importa también <code>@isai_dev/data_table_lib/style.css</code>.</p>
         </div>
       </section>

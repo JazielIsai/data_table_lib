@@ -4,10 +4,10 @@ La versión 2 amplía `Table` y `TableEdit` sin exigir cambios a las tablas bás
 
 ## Antes de instalar
 
-Comprueba la versión que npm entrega con `npm view @isai_dev/data_table_lib dist-tags --json`. La etiqueta `next` puede quedar detrás del código de GitHub y de la demo. No instales una función de v2 hasta que la versión que la incluye aparezca en el registro.
+La versión estable 2.0.0 se instala con la etiqueta predeterminada `latest`. Comprueba las etiquetas disponibles con `npm view @isai_dev/data_table_lib dist-tags --json` si necesitas reproducir una versión preliminar anterior.
 
 ```bash
-npm install @isai_dev/data_table_lib@next
+npm install @isai_dev/data_table_lib
 ```
 
 React y React DOM 18 o 19 son dependencias par. Conserva la importación del CSS:
@@ -56,4 +56,4 @@ La tabla puede paginar localmente o delegar paginación, búsqueda y ordenamient
 
 ## Compatibilidad y versiones
 
-Mientras v2 tenga sufijo `alpha`, pueden ajustarse las nuevas opciones antes de `2.0.0`. Los cambios incompatibles se documentarán en este archivo y en las notas del Release. Una vez publicada `2.0.0`, las correcciones compatibles incrementarán `patch`, las funciones compatibles `minor` y los cambios incompatibles `major`. Cada versión publicada en npm debe corresponder a un tag y un Release del mismo código.
+Desde `2.0.0`, las correcciones compatibles incrementan `patch`, las funciones compatibles `minor` y los cambios incompatibles `major`. Los cambios incompatibles se documentan en este archivo y en las notas del Release. Cada versión publicada en npm debe corresponder a un tag y un Release del mismo código.
