@@ -4,7 +4,7 @@
 
 [![Vista visual de Data Table Lib: los mismos datos como tabla y galería](https://jazielisai.github.io/data_table_lib/social-preview.png)](https://jazielisai.github.io/data_table_lib/#demo)
 
-[Probar la demo](https://jazielisai.github.io/data_table_lib/#demo) · [Ver tres ejemplos completos](https://github.com/JazielIsai/data_table_lib/tree/main/examples) · [Versión 2 más reciente en GitHub](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.9) · [Instalar desde npm](https://www.npmjs.com/package/@isai_dev/data_table_lib)
+[Probar la demo](https://jazielisai.github.io/data_table_lib/#demo) · [Ver tres ejemplos completos](https://github.com/JazielIsai/data_table_lib/tree/main/examples) · [Versión 2 más reciente en GitHub](https://github.com/JazielIsai/data_table_lib/releases/tag/v2.0.0-alpha.10) · [Instalar desde npm](https://www.npmjs.com/package/@isai_dev/data_table_lib)
 
 ```bash
 npm install @isai_dev/data_table_lib@next
