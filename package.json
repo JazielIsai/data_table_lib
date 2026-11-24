@@ -1,6 +1,6 @@
 {
   "name": "@isai_dev/data_table_lib",
-  "version": "2.0.0-alpha.9",
+  "version": "2.0.0-alpha.10",
   "description": "Tablas React que también se convierten en galerías de fotos, con edición y preferencias listas para usar",
   "keywords": [
     "react-table",
@@ -55,6 +55,8 @@
     "examples": "vite",
     "build": "node scripts/build.mjs",
     "test": "npm run build && tsc --noEmit -p tsconfig.types.json && node --test tests/*.test.mjs",
+    "test:e2e": "playwright test",
+    "benchmark:render": "npm run build && node benchmarks/measure.mjs",
     "typecheck": "npm run build && tsc --noEmit -p tsconfig.types.json",
     "prepack": "npm run build"
   },
@@ -63,6 +65,8 @@
     "react-dom": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.1",
+    "@playwright/test": "1.65.1",
     "@testing-library/react": "16.3.3",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 
-export function imageDetails(value, row, column) {
+export function imageDetails(value, row, column, labels) {
   const source = typeof value === 'string' ? value : value?.src;
   const configuredAlt = typeof column.imageAlt === 'function'
     ? column.imageAlt(value, row) : column.imageAlt;
   const alt = configuredAlt ?? value?.alt
-    ?? (row?.name ? `Foto de ${row.name}` : column.headerName ?? column.field);
+    ?? (row?.name ? (labels?.imageAlt?.(row.name) ?? `Foto de ${row.name}`)
+      : column.headerName ?? column.field);
   return { source, alt,
     srcSet: typeof value === 'string' ? undefined : value?.srcSet,
     sizes: typeof value === 'string' ? undefined : value?.sizes,
@@ -13,15 +14,15 @@ export function imageDetails(value, row, column) {
     height: typeof value === 'string' ? undefined : value?.height };
 }
 
-export function ImageCell({ value, row, column, view, onOpen, openLabel }) {
-  const { source, alt, srcSet, sizes, width, height } = imageDetails(value, row, column);
+export function ImageCell({ value, row, column, view, onOpen, openLabel, labels }) {
+  const { source, alt, srcSet, sizes, width, height } = imageDetails(value, row, column, labels);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => setFailed(false), [source, srcSet]);
 
   if (!source || failed) {
     return <span className={`dt-image-placeholder dt-image-${view}`}>
-      {column.imageFallback ?? 'Sin foto'}
+      {column.imageFallback ?? labels?.imageFallback ?? 'Sin foto'}
     </span>;
   }
 

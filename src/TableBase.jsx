@@ -11,6 +11,7 @@ import { downloadBlob, downloadCsv, toCsv } from './csv.js';
 import { encodeView, loadSavedViews, normalizeView, readViewParam, saveSavedViews,
   upsertSavedView, viewsEqual, withViewParam } from './viewState.js';
 import { ViewMenu } from './ViewMenu.jsx';
+import { localeLabels } from './locales.js';
 
 const defaultId = (row, index) => row?.id ?? index;
 const initialPage = { pageIndex: 0, pageSize: 10 };
@@ -40,14 +41,14 @@ function ActionButton({ action, onClick, disabled }) {
 }
 
 function cellContent({ row, column, rowIndex, rowId, imageView, imageOpenLabel, onImageOpen,
-  editable, saveMode, onEdit, error, errorId, disabled, fileVersion, selectOptionLabel }) {
+  editable, saveMode, onEdit, error, errorId, disabled, fileVersion, selectOptionLabel, words }) {
   const value = row?.[column.field];
   const label = column.headerName || column.field;
   const canEdit = editable && column.editable !== false;
   const interactive = canEdit && (saveMode || column.onChange || column.onValueChange);
   if (typeof column.renderCell === 'function') return column.renderCell(value, row, rowIndex);
   if (column.type === 'image') return <ImageCell value={value} row={row} column={column}
-    view={imageView} openLabel={imageOpenLabel}
+    view={imageView} openLabel={imageOpenLabel} labels={words}
     onOpen={column.previewable || column.onImageClick ? () => onImageOpen(value, row, column) : undefined} />;
 
   if (column.type === 'button') {
@@ -64,7 +65,7 @@ function cellContent({ row, column, rowIndex, rowId, imageView, imageOpenLabel, 
         aria-describedby={error ? errorId : undefined}
         disabled={!interactive || disabled}
         onChange={(event) => onEdit(event, row, column)} />
-      <span aria-hidden="true">{column.type === 'switch' ? '' : checked ? 'Sí' : 'No'}</span>
+      <span aria-hidden="true">{column.type === 'switch' ? '' : checked ? words.yes : words.no}</span>
     </label>;
   }
 
@@ -137,10 +138,10 @@ function cellContent({ row, column, rowIndex, rowId, imageView, imageOpenLabel, 
 export function DataTable({
   columns = [], rows = [], actions = [], bulkActions = [], caption, editable = false,
   legacyEditActions = false, getRowId = defaultId,
-  actionsHeader = 'Acciones', emptyMessage = 'No hay datos', className = '',
+  actionsHeader: customActionsHeader, emptyMessage: customEmptyMessage, className = '',
   sortable = false, sort: controlledSort, onSortChange,
   searchable = false, search: controlledSearch, onSearchChange,
-  searchPlaceholder = 'Buscar…', filters: controlledFilters, onFiltersChange,
+  searchPlaceholder: customSearchPlaceholder, filters: controlledFilters, onFiltersChange,
   paginationEnabled = false, pagination: controlledPagination, onPaginationChange,
   manualSorting = false, manualFiltering = false, manualPagination = false, rowCount,
   selectable = false, selectedRowIds: controlledSelected, onSelectionChange,
@@ -158,60 +159,22 @@ export function DataTable({
   allowLayoutChange = false, layoutPreferencesKey, gallery = {},
   view: controlledView, defaultView, onViewChange, viewsKey,
   shareableViews = false, syncViewToUrl = false,
-  loading = false, error, loadingMessage = 'Cargando…',
+  loading = false, error, loadingMessage: customLoadingMessage,
   editMode = 'immediate', onSave, onCancel,
-  previousLabel = 'Anterior', nextLabel = 'Siguiente',
-  saveLabel = 'Guardar', cancelLabel = 'Cancelar', labels = {}
+  previousLabel: customPreviousLabel, nextLabel: customNextLabel,
+  saveLabel: customSaveLabel, cancelLabel: customCancelLabel,
+  locale = 'es', labels = {}
 }) {
-  const words = {
-    search: 'Buscar en la tabla',
-    filter: (header) => `Filtrar ${header}`,
-    filterPlaceholder: 'Filtrar…',
-    selectPage: 'Seleccionar página',
-    selectRow: (id) => `Seleccionar fila ${id}`,
-    rowsPerPage: 'Filas por página',
-    selectOption: 'Selecciona una opción',
-    imageView: 'Vista de fotos',
-    imageAvatar: 'Avatares',
-    imageThumbnail: 'Miniaturas',
-    imageLarge: 'Grandes',
-    imageHidden: 'Ocultar fotos',
-    imageOpen: (alt) => `Ampliar ${alt}`,
-    imagePreview: 'Vista ampliada de la foto',
-    imagePrevious: 'Anterior foto',
-    imageNext: 'Siguiente foto',
-    imageClose: 'Cerrar foto',
-    columns: 'Columnas',
-    resetColumns: 'Restablecer',
-    moveColumnUp: (header) => `Mover ${header} a la izquierda`,
-    moveColumnDown: (header) => `Mover ${header} a la derecha`,
-    layout: 'Presentación',
-    layoutTable: 'Tabla',
-    layoutGallery: 'Galería',
-    gallery: 'Galería de fotos',
-    gallerySort: 'Ordenar por',
-    galleryNoSort: 'Sin ordenar',
-    galleryAscending: 'Orden ascendente',
-    galleryDescending: 'Orden descendente',
-    selectedCount: (count) => `${count} ${count === 1 ? 'seleccionado' : 'seleccionados'}`,
-    bulkActions: 'Acciones de selección',
-    clearSelection: 'Limpiar selección',
-    exportCsv: 'Exportar CSV',
-    exportingCsv: 'Exportando…',
-    exportError: 'No se pudo exportar el CSV',
-    resizeColumn: (header) => `Cambiar ancho de ${header}`,
-    views: 'Vistas',
-    savedViews: 'Vistas guardadas',
-    noSavedViews: 'Aún no hay vistas guardadas',
-    viewName: 'Nombre de la vista',
-    saveView: 'Guardar vista',
-    applyView: (name) => `Aplicar ${name}`,
-    deleteView: (name) => `Eliminar ${name}`,
-    copyViewLink: 'Copiar enlace',
-    viewLinkCopied: 'Enlace copiado',
-    viewLinkManual: 'Copia este enlace',
-    ...labels
-  };
+  const activeLocale = locale === 'en' ? 'en' : 'es';
+  const words = { ...localeLabels[activeLocale], ...labels };
+  const actionsHeader = customActionsHeader ?? words.actionsHeader;
+  const emptyMessage = customEmptyMessage ?? words.emptyMessage;
+  const loadingMessage = customLoadingMessage ?? words.loadingMessage;
+  const searchPlaceholder = customSearchPlaceholder ?? words.searchPlaceholder;
+  const previousLabel = customPreviousLabel ?? words.previous;
+  const nextLabel = customNextLabel ?? words.next;
+  const saveLabel = customSaveLabel ?? words.save;
+  const cancelLabel = customCancelLabel ?? words.cancel;
   const linksEnabled = Boolean(shareableViews) || Boolean(syncViewToUrl);
   const viewParam = (typeof shareableViews === 'object' && shareableViews?.param) || 'view';
   const viewOptions = { sortable,
@@ -357,7 +320,7 @@ export function DataTable({
       hidden: column.hidden || columnVisibility[column.field] === false
         || (column.type === 'image' && imageView === 'hidden') }));
     const filtered = manualFiltering ? rows : filterRows(rows, searchColumns, search, filters);
-    return manualSorting ? filtered : sortRows(filtered, sort, columns);
+    return manualSorting ? filtered : sortRows(filtered, sort, columns, activeLocale);
   }, [rows, columns, columnVisibility, imageView, search, filters, sort,
     manualFiltering, manualSorting]);
   const total = manualPagination ? (rowCount ?? rows.length) : processedRows.length;
@@ -368,7 +331,7 @@ export function DataTable({
     ? paginateRows(processedRows, pageIndex, pageSize) : processedRows;
   const previewColumn = imagePreview && columnByField.get(imagePreview.field);
   const previewEntries = previewColumn ? pageRows.map((row, index) => ({
-    ...imageDetails(row?.[previewColumn.field], row, previewColumn),
+    ...imageDetails(row?.[previewColumn.field], row, previewColumn, words),
     rowId: getRowId(row, index)
   })).filter((entry) => entry.source) : [];
   const previewIndex = previewEntries.findIndex((entry) =>
@@ -715,7 +678,7 @@ export function DataTable({
   }, []);
 
   return (
-    <div className={`dt-container ${className}`.trim()}>
+    <div className={`dt-container ${className}`.trim()} lang={activeLocale}>
       {(showSearch || showImageViewControl || showColumnControl || showLayoutControl || showExport || showViewMenu) && <div className="dt-toolbar">
         {showSearch && <label className="dt-search-label">
           <span className="dt-visually-hidden">{words.search}</span>
@@ -896,7 +859,7 @@ export function DataTable({
                           openImage(value, currentRow, imageColumn, id);
                         }, editable, saveMode, error: fieldError,
                         errorId, disabled, fileVersion: fileVersions[key] ?? 0,
-                        selectOptionLabel: words.selectOption,
+                        selectOptionLabel: words.selectOption, words,
                         onEdit: (event) => updateEdit(event, originalRow, column, id) })}
                       {fieldError && <span className="dt-field-error" id={errorId}>{fieldError}</span>}
                     </td>;
@@ -931,7 +894,8 @@ export function DataTable({
         </table>
       </div>}
       {showPagination && <div className="dt-pagination">
-        <span aria-live="polite">{total === 0 ? '0' : pageIndex * pageSize + 1}–{Math.min((pageIndex + 1) * pageSize, total)} de {total}</span>
+        <span aria-live="polite">{words.range(total === 0 ? 0 : pageIndex * pageSize + 1,
+          Math.min((pageIndex + 1) * pageSize, total), total)}</span>
         <div className="dt-page-actions">
           <label>{words.rowsPerPage}
             <select className="dt-control" value={pageSize}

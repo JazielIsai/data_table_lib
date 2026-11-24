@@ -5,11 +5,13 @@ import { gfmHeadingId } from 'marked-gfm-heading-id';
 import mainReadme from '../README.md?raw';
 import examplesReadme from '../examples/README.md?raw';
 import publishingGuide from '../docs/PUBLICACION.md?raw';
+import migrationGuide from '../docs/MIGRACION_V2.md?raw';
 
 const repository = 'https://github.com/JazielIsai/data_table_lib';
 const documents = [
   { id: 'main', label: 'Guía principal', markdown: mainReadme, path: 'README.md' },
   { id: 'examples', label: 'Ejemplos', markdown: examplesReadme, path: 'examples/README.md' },
+  { id: 'migration', label: 'Migrar a v2', markdown: migrationGuide, path: 'docs/MIGRACION_V2.md' },
   { id: 'publishing', label: 'Publicación', markdown: publishingGuide, path: 'docs/PUBLICACION.md' }
 ];
 const markdownRenderer = new Marked(gfmHeadingId());

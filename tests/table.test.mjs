@@ -690,6 +690,44 @@ test('failed saves keep the draft and show an error for retry', async () => {
   assert.ok(screen.getByRole('button', { name: 'Guardar' }));
 });
 
+test('English locale covers controls, images, pagination and label overrides', () => {
+  const columns = [
+    { field: 'photo', type: 'image', previewable: true },
+    { field: 'name', headerName: 'Name' },
+    { field: 'active', type: 'checkbox' }
+  ];
+  const rows = [
+    { id: 1, name: 'Ana', active: true, photo: '/ana.jpg' },
+    { id: 2, name: 'Luis', active: false, photo: null }
+  ];
+  render(React.createElement(Table, {
+    columns, rows, locale: 'en', searchable: true, paginationEnabled: true,
+    pagination: { pageIndex: 0, pageSize: 2 }, allowLayoutChange: true,
+    labels: { searchPlaceholder: 'Find people' }
+  }));
+  assert.equal(document.querySelector('.dt-container').lang, 'en');
+  assert.ok(screen.getByPlaceholderText('Find people'));
+  assert.ok(screen.getByRole('button', { name: 'Gallery' }));
+  assert.ok(screen.getByRole('button', { name: 'Previous' }));
+  assert.ok(screen.getByText('1–2 of 2'));
+  assert.ok(screen.getByRole('img', { name: 'Photo of Ana' }));
+  assert.ok(screen.getByText('No photo'));
+  assert.ok(screen.getByText('Yes'));
+  assert.ok(screen.getByText('No'));
+  fireEvent.click(screen.getByRole('button', { name: 'Gallery' }));
+  assert.ok(screen.getByRole('region', { name: 'Photo gallery' }));
+  assert.ok(screen.getByRole('button', { name: 'Table' }));
+  cleanup();
+  render(React.createElement(TableEdit, {
+    locale: 'en', columns: [{ field: 'name', headerName: 'Name', type: 'text' }],
+    rows: [{ id: 1, name: 'Ana' }], editMode: 'save', onSave: () => {}
+  }));
+  fireEvent.change(screen.getByRole('textbox', { name: 'Name' }),
+    { target: { value: 'Anna' } });
+  assert.ok(screen.getByRole('button', { name: 'Save' }));
+  assert.ok(screen.getByRole('button', { name: 'Cancel' }));
+});
+
 test('loading and errors are announced', () => {
   render(React.createElement(Table, {
     columns: [{ field: 'name' }], rows: [{ id: 1, name: 'Ana' }],

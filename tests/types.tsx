@@ -23,7 +23,10 @@ const columns: TableColumn<Person>[] = [
 const sort: TableSort = { field: 'name', direction: 'asc' };
 
 export const examples = <>
-  <Table columns={columns} rows={people} sortable searchable paginationEnabled
+  <Table columns={columns} rows={people} locale="en"
+    labels={{ range: (first, last, total) => `${first}-${last} / ${total}`,
+      imageAlt: (name) => `Photo of ${name}` }}
+    sortable searchable paginationEnabled
     resizableColumns defaultColumnWidths={{ name: 180 }}
     pinActions
     csvExport={{ filename: 'people.csv', scope: 'filtered',
@@ -51,7 +54,7 @@ export const examples = <>
       loaded[0]?.name;
       ids.map(String);
     } }]} />
-  <TableEdit columns={columns} rows={people} editMode="save"
+  <TableEdit columns={columns} rows={people} locale="en" editMode="save"
     onSave={async (draft, original) => { draft.name; original.id; }} />
 </>;
 

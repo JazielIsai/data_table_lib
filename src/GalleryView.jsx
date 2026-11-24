@@ -57,7 +57,7 @@ export function GalleryView({ caption, rows, imageColumn, titleField, descriptio
             <article className="dt-gallery-card" aria-label={String(heading ?? id)}>
               <div className={`dt-gallery-media dt-gallery-media-${aspectRatio}`}>
                 <ImageCell value={value} row={row} column={imageColumn} view="gallery"
-                  openLabel={labels.imageOpen}
+                  openLabel={labels.imageOpen} labels={labels}
                   onOpen={imageColumn.previewable || imageColumn.onImageClick
                     ? () => onImageOpen(value, row, id) : undefined} />
               </div>

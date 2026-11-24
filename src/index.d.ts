@@ -102,6 +102,19 @@ export interface LegacyEditAction<Row extends TableRow = TableRow>
 export interface TableSort { field: string; direction: 'asc' | 'desc' }
 export interface TablePagination { pageIndex: number; pageSize: number }
 export interface TableLabels {
+  actionsHeader?: string;
+  emptyMessage?: string;
+  loadingMessage?: string;
+  searchPlaceholder?: string;
+  previous?: string;
+  next?: string;
+  save?: string;
+  cancel?: string;
+  yes?: string;
+  no?: string;
+  imageFallback?: string;
+  imageAlt?: (name: string) => string;
+  range?: (first: number, last: number, total: number) => string;
   search?: string;
   filter?: (header: string) => string;
   filterPlaceholder?: string;
@@ -176,6 +189,8 @@ export interface TableCsvExport<Row extends TableRow = TableRow> {
     | Promise<void | Blob | { blob: Blob; filename?: string }>;
 }
 interface BaseProps<Row extends TableRow> {
+  /** Built-in UI language; labels override individual strings. Defaults to Spanish. */
+  locale?: 'es' | 'en';
   columns?: TableColumn<Row>[];
   rows?: Row[];
   actions?: TableAction<Row>[];

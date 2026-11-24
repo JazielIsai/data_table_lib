@@ -23,12 +23,12 @@ export function filterRows(rows, columns, search, filters) {
   });
 }
 
-export function sortRows(rows, sort, columns) {
+export function sortRows(rows, sort, columns, locale) {
   if (!sort?.field || !sort?.direction) return rows;
   const column = columns.find((item) => item.field === sort.field);
   if (!column) return rows;
   const multiplier = sort.direction === 'desc' ? -1 : 1;
-  const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+  const collator = new Intl.Collator(locale, { numeric: true, sensitivity: 'base' });
   return rows.map((row, index) => ({ row, index })).sort((a, b) => {
     const left = a.row[sort.field];
     const right = b.row[sort.field];

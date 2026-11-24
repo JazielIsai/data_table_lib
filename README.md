@@ -29,6 +29,8 @@ Licencia [MIT](./LICENSE). Puedes usar, modificar y distribuir la librería cons
 
 > La versión 2 está disponible como vista previa en npm mediante la etiqueta `next`. La instalación predeterminada sigue usando la versión estable.
 
+Si ya usas v0.1.x, sigue la [guía de migración a v2](./docs/MIGRACION_V2.md). Comprueba la versión de `next` antes de usar una función nueva: npm puede ir detrás del código y de la demo de GitHub.
+
 ## Instalar y ejecutar
 
 Requiere React y React DOM 18 o 19 en la aplicación. Para desarrollar o compilar este repositorio se recomienda Node.js 22.12+ (también 24 o 26 LTS); [Vite 8 admite Node 20.19+ o 22.12+](https://vite.dev/guide/). La librería está publicada en npm como [`@isai_dev/data_table_lib`](https://www.npmjs.com/package/@isai_dev/data_table_lib).
@@ -66,6 +68,18 @@ También puedes instalar el archivo generado con `npm install /ruta/al/archivo.t
 ## Ejemplos ejecutables
 
 `npm run examples` compila la librería y sirve [siete ejemplos independientes](https://github.com/JazielIsai/data_table_lib/tree/main/examples) en `http://localhost:5173/examples/`: catálogo de productos, directorio con fotos, panel de datos remotos, tabla local, edición con validación, vistas guardadas y controles de formulario. Cada ejemplo importa las entradas públicas del paquete, igual que una aplicación consumidora. La página muestra el código fuente de esos mismos archivos junto a cada demo, para que el ejemplo visual y el código copiable coincidan.
+
+## Idiomas
+
+La interfaz integrada usa español por defecto. Define `locale="en"` en `Table` o `TableEdit` para mostrar controles, estados, paginación, fotos y mensajes integrados en inglés. `labels` reemplaza cualquier texto o función de formato; los props de texto existentes, como `emptyMessage` y `saveLabel`, siguen teniendo prioridad cuando se proporcionan.
+
+```jsx
+<Table locale="en" rows={rows} columns={columns} searchable paginationEnabled
+  labels={{ emptyMessage: 'No customers yet',
+    range: (first, last, total) => `${first}–${last} of ${total} customers` }} />
+```
+
+La librería marca el contenedor con `lang="es"` o `lang="en"` para que la tecnología de asistencia pronuncie los controles en el idioma elegido. Los textos de tus filas, encabezados, opciones y acciones siguen siendo responsabilidad de tu aplicación.
 
 ## Fotos, galería y acciones (vista previa de la versión 2)
 
@@ -398,3 +412,5 @@ Los encabezados anuncian el estado de ordenamiento con `aria-sort`; controles y 
 El CSS sólo usa clases `.dt-*`. Personaliza `--dt-surface`, `--dt-surface-hover`, `--dt-text`, `--dt-secondary`, `--dt-separator`, `--dt-accent` y `--dt-on-accent` en el contenedor. `npm run build` genera ESM, CommonJS, tipos y CSS en `dist/`. React es una dependencia par y no se incluye en el paquete.
 
 La matriz de CI ejecuta pruebas con React 18 y 19 sobre Node 22, 24 y 26. Las dependencias de desarrollo se fijan a versiones exactas en `package-lock.json`; el paquete publicado sólo exige React y React DOM como dependencias par.
+
+Instala el navegador de pruebas una vez con `npx playwright install chromium`. `npm run test:e2e` abre los ejemplos y comprueba la galería, el visor de fotos, la edición y problemas de accesibilidad detectables con axe. `npm run benchmark:render` mide el renderizado de 1 000 y 5 000 filas con y sin paginación; usa el resultado para decidir si tu aplicación necesita delegar datos al servidor o mostrar menos filas por página. Si ya tienes Chrome, puedes ejecutar ambos comandos con `PLAYWRIGHT_CHANNEL=chrome` sin descargar Chromium.
