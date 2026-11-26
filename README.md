@@ -335,6 +335,21 @@ En modo inmediato, define `onValueChange(value, row, event)` en la columna y act
 
 ## Referencia de props
 
+### Muchas filas con virtualización
+
+```jsx
+<Table
+  rows={rows}
+  columns={columns}
+  getRowId={(row) => row.id}
+  virtualization={{ height: 600, estimateRowHeight: 64, overscan: 6 }}
+/>
+```
+
+La virtualización mantiene en el DOM sólo las filas visibles y mide las alturas reales; sirve para tablas grandes sin paginación o con páginas amplias. Usa identificadores estables para conservar selección y edición al desplazarte. Funciona también en `TableEdit`. En la vista galería se usa la paginación habitual. La búsqueda, el ordenamiento y la exportación siguen trabajando sobre todas las filas cargadas. Si el conjunto es demasiado grande para cargarse en el navegador, usa paginación y operaciones remotas. Ejecuta `npm run benchmark:render` para comparar renderizado completo, paginado y virtualizado en tu equipo.
+
+Los enlaces de vistas compartidas y las vistas guardadas rechazan datos malformados o excesivamente grandes antes de procesarlos. Como en cualquier aplicación React, valida también en el servidor los cambios realizados por edición y los permisos de acciones; los controles visuales no sustituyen esa validación.
+
 | Prop | Tipo | Uso |
 | --- | --- | --- |
 | `columns` | `TableColumn[]` | Definición y orden de columnas. `field` debe ser único. |
@@ -347,6 +362,7 @@ En modo inmediato, define `onValueChange(value, row, event)` en la columna y act
 | `sortable`, `sort`, `onSortChange` | `boolean`, `{field, direction}`, función | Ordenamiento opcional/controlado. |
 | `filters`, `onFiltersChange` | objeto, función | Filtros de columnas controlados. |
 | `paginationEnabled`, `pagination`, `onPaginationChange` | `boolean`, `{pageIndex, pageSize}`, función | Paginación opcional/controlada; `pageIndex` empieza en 0. |
+| `virtualization` | `boolean` o `{ height?, estimateRowHeight?, overscan? }` | Monta sólo las filas visibles de la tabla. Valor inicial: `false`; altura de 560 px, estimación de 56 px y cinco filas extra por lado. |
 | `manualSorting`, `manualFiltering`, `manualPagination`, `rowCount` | booleanos, número | Operaciones delegadas al servidor. |
 | `selectable`, `selectedRowIds`, `onSelectionChange` | `boolean`, IDs, función | Selección opcional/controlada. |
 | `defaultImageView`, `imageView`, `onImageViewChange` | vista, vista, función | Vista de fotos inicial o controlada. |

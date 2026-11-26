@@ -35,3 +35,13 @@ test('gallery and editable table have no detectable accessibility violations', a
     expect(results.violations).toEqual([]);
   }
 });
+
+test('virtualized table keeps the DOM bounded while scrolling', async ({ page }) => {
+  await page.goto('../benchmarks/?rows=5000&virtualized=true');
+  const table = page.getByRole('table');
+  await expect(table.getByRole('cell', { name: 'Person 1', exact: true })).toBeVisible();
+  expect(await table.locator('tbody tr').count()).toBeLessThan(50);
+  await page.locator('.dt-scroll').evaluate((element) => { element.scrollTop = element.scrollHeight; });
+  await expect(table.getByRole('cell', { name: 'Person 5000', exact: true })).toBeVisible();
+  expect(await table.locator('tbody tr').count()).toBeLessThan(50);
+});

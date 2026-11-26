@@ -10,9 +10,11 @@ try {
   const base = server.resolvedUrls.local[0];
   const results = [];
   for (const rows of [1000, 5000]) {
-    for (const paginated of [false, true]) {
+    for (const mode of ['all', 'paginated', 'virtualized']) {
+      const paginated = mode === 'paginated';
+      const virtualized = mode === 'virtualized';
       const page = await browser.newPage();
-      await page.goto(`${base}benchmarks/?rows=${rows}&paginated=${paginated}`);
+      await page.goto(`${base}benchmarks/?rows=${rows}&paginated=${paginated}&virtualized=${virtualized}`);
       await page.waitForFunction(() => window.__DT_BENCHMARK !== undefined);
       results.push(await page.evaluate(() => window.__DT_BENCHMARK));
       await page.close();

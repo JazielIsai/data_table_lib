@@ -40,6 +40,14 @@ test('CSV escapes quotes, newlines and spreadsheet formulas', () => {
   assert.equal(csv, '\uFEFF"Name","Note"\r\n"\'=SUM(1,2)","A ""quote""\nand more"\r\n');
 });
 
+test('shared views reject oversized or malformed input before decoding', () => {
+  assert.equal(decodeView('A'.repeat(8193)), null);
+  assert.equal(decodeView('abc!'), null);
+  window.localStorage.setItem('views-oversized', ' '.repeat(262145));
+  assert.deepEqual(loadSavedViews('views-oversized'), []);
+  window.localStorage.removeItem('views-oversized');
+});
+
 test('column width supports keyboard, controlled state and local preferences', () => {
   const columns = [{ field: 'name', headerName: 'Nombre', width: 150, minWidth: 100, maxWidth: 200 }];
   const changes = [];

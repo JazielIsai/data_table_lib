@@ -210,6 +210,15 @@ interface BaseProps<Row extends TableRow> {
   filters?: Record<string, string>;
   onFiltersChange?: (filters: Record<string, string>) => void;
   paginationEnabled?: boolean;
+  /** Renders only visible table rows. Gallery layout continues to use pagination. */
+  virtualization?: boolean | {
+    /** Scroll area height in pixels. Default: 560. */
+    height?: number;
+    /** Estimated row height in pixels; measured rows can vary. Default: 56. */
+    estimateRowHeight?: number;
+    /** Extra rows rendered above and below the viewport. Default: 5. */
+    overscan?: number;
+  };
   pagination?: TablePagination;
   onPaginationChange?: (pagination: TablePagination) => void;
   manualSorting?: boolean;

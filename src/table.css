@@ -15,6 +15,9 @@
   font: 400 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 .dt-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.dt-scroll-virtual { overflow: auto; }
+.dt-table-virtual thead { position: sticky; top: 0; z-index: 3; background: var(--dt-surface); }
+.dt-table .dt-virtual-spacer td { padding: 0; border: 0; line-height: 0; }
 .dt-table { width: 100%; min-width: 28rem; border-collapse: collapse; text-align: left; }
 .dt-table-resizable { table-layout: fixed; }
 .dt-table-resizable th, .dt-table-resizable td { overflow-wrap: anywhere; }

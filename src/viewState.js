@@ -1,6 +1,8 @@
 import { normalizeColumnOrder } from './columnState.js';
 
 const VERSION = 1;
+const MAX_VIEW_PARAM_LENGTH = 8192;
+const MAX_SAVED_VIEWS_LENGTH = 262144;
 const layouts = new Set(['table', 'gallery']);
 const imageViews = new Set(['avatar', 'thumbnail', 'large', 'hidden']);
 const isPlainObject = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -45,7 +47,8 @@ export function encodeView(view) {
 
 /** Reads text produced by encodeView. Returns null for anything invalid or from another version. */
 export function decodeView(text) {
-  if (typeof text !== 'string' || text === '') return null;
+  if (typeof text !== 'string' || text === '' || text.length > MAX_VIEW_PARAM_LENGTH
+    || !/^[A-Za-z0-9_-]+={0,2}$/.test(text)) return null;
   try {
     const parsed = JSON.parse(fromBase64Url(text.replace(/=+$/, '')));
     if (!isPlainObject(parsed) || parsed.v !== VERSION) return null;
@@ -114,7 +117,9 @@ const isSavedView = (item) => isPlainObject(item) && typeof item.id === 'string'
 export function loadSavedViews(key) {
   if (!key || typeof window === 'undefined') return [];
   try {
-    const saved = JSON.parse(window.localStorage.getItem(key) ?? '[]');
+    const raw = window.localStorage.getItem(key) ?? '[]';
+    if (raw.length > MAX_SAVED_VIEWS_LENGTH) return [];
+    const saved = JSON.parse(raw);
     return Array.isArray(saved) ? saved.filter(isSavedView) : [];
   } catch {
     return [];

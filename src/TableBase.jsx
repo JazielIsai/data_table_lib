@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { filterRows, paginateRows, sortRows } from './rowModel.js';
 import { ActionIcon, isActionIconName } from './ActionIcon.jsx';
 import { ImageCell, imageDetails } from './ImageCell.jsx';
@@ -143,6 +144,7 @@ export function DataTable({
   searchable = false, search: controlledSearch, onSearchChange,
   searchPlaceholder: customSearchPlaceholder, filters: controlledFilters, onFiltersChange,
   paginationEnabled = false, pagination: controlledPagination, onPaginationChange,
+  virtualization = false,
   manualSorting = false, manualFiltering = false, manualPagination = false, rowCount,
   selectable = false, selectedRowIds: controlledSelected, onSelectionChange,
   defaultImageView = 'thumbnail', imageView: controlledImageView,
@@ -228,6 +230,7 @@ export function DataTable({
   const [storedViews, setStoredViews] = useState(() => ({ key: viewsKey, views: loadSavedViews(viewsKey) }));
   const savedViews = storedViews.key === viewsKey ? storedViews.views : loadSavedViews(viewsKey);
   const resizeCleanup = useRef(null);
+  const scrollRef = useRef(null);
   const viewBatch = useRef(null);
   const initialViewAnnounced = useRef(false);
   const latestApplyView = useRef(null);
@@ -329,6 +332,31 @@ export function DataTable({
   const pageIndex = Math.max(0, Math.min(Number(pagination.pageIndex) || 0, maxPage));
   const pageRows = showPagination && !manualPagination
     ? paginateRows(processedRows, pageIndex, pageSize) : processedRows;
+  const virtualOptions = typeof virtualization === 'object' && virtualization !== null
+    ? virtualization : {};
+  const virtualEnabled = Boolean(virtualization) && layout === 'table';
+  const virtualHeight = Number.isFinite(virtualOptions.height) && virtualOptions.height > 0
+    ? virtualOptions.height : 560;
+  const estimatedRowHeight = Number.isFinite(virtualOptions.estimateRowHeight)
+    && virtualOptions.estimateRowHeight > 0 ? virtualOptions.estimateRowHeight : 56;
+  const overscan = Number.isInteger(virtualOptions.overscan) && virtualOptions.overscan >= 0
+    ? virtualOptions.overscan : 5;
+  const rowVirtualizer = useVirtualizer({
+    count: virtualEnabled ? pageRows.length : 0,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => estimatedRowHeight,
+    getItemKey: (index) => String(getRowId(pageRows[index], index)),
+    overscan,
+    initialRect: { width: 0, height: virtualHeight },
+    useFlushSync: false
+  });
+  const virtualItems = virtualEnabled ? rowVirtualizer.getVirtualItems() : [];
+  const renderedRows = virtualEnabled
+    ? virtualItems.map((item) => ({ row: pageRows[item.index], index: item.index, item }))
+    : pageRows.map((row, index) => ({ row, index, item: null }));
+  const topSpacer = virtualItems[0]?.start ?? 0;
+  const bottomSpacer = virtualItems.length
+    ? Math.max(0, rowVirtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end) : 0;
   const previewColumn = imagePreview && columnByField.get(imagePreview.field);
   const previewEntries = previewColumn ? pageRows.map((row, index) => ({
     ...imageDetails(row?.[previewColumn.field], row, previewColumn, words),
@@ -761,12 +789,13 @@ export function DataTable({
         loading={loading} loadingMessage={loadingMessage} emptyMessage={emptyMessage}
         labels={words} />}
       {layout === 'table' &&
-      <div className="dt-scroll">
-        <table className={`dt-table ${fixedLayout ? 'dt-table-resizable' : ''}`}
+      <div className={`dt-scroll ${virtualEnabled ? 'dt-scroll-virtual' : ''}`}
+        ref={scrollRef} style={virtualEnabled ? { maxHeight: virtualHeight } : undefined}>
+        <table className={`dt-table ${fixedLayout ? 'dt-table-resizable' : ''} ${virtualEnabled ? 'dt-table-virtual' : ''}`}
           style={fixedLayout ? { width: visibleColumns.reduce((sum, column) =>
             sum + (widthFor(column) ?? 160), (selectable ? 42 : 0) + (hasActions ? 160 : 0)),
             minWidth: 0 } : undefined}
-          aria-busy={loading}>
+          aria-busy={loading} aria-rowcount={virtualEnabled ? pageRows.length + 1 : undefined}>
           {caption && <caption>{caption}</caption>}
           {fixedLayout && <colgroup>
             {selectable && <col style={{ width: 42 }} />}
@@ -831,16 +860,21 @@ export function DataTable({
             </tr>}
           </thead>
           <tbody>
+            {virtualEnabled && topSpacer > 0 && <tr aria-hidden="true" className="dt-virtual-spacer">
+              <td colSpan={Math.max(colSpan, 1)} style={{ height: topSpacer }} /></tr>}
             {loading ? <tr><td className="dt-empty" colSpan={Math.max(colSpan, 1)}
               role="status">{loadingMessage}</td></tr>
               : pageRows.length === 0 ? <tr><td className="dt-empty"
                 colSpan={Math.max(colSpan, 1)}>{emptyMessage}</td></tr>
-              : pageRows.map((originalRow, rowIndex) => {
+              : renderedRows.map(({ row: originalRow, index: rowIndex, item }) => {
                 const id = getRowId(originalRow, rowIndex);
                 const key = String(id);
                 const row = saveMode ? drafts[key] ?? originalRow : originalRow;
                 const disabled = Boolean(saving[key]);
-                return <tr key={id} aria-selected={selectable ? selectedSet.has(key) : undefined}>
+                return <tr key={id} data-index={item?.index}
+                  ref={item ? rowVirtualizer.measureElement : undefined}
+                  aria-rowindex={item ? rowIndex + 2 : undefined}
+                  aria-selected={selectable ? selectedSet.has(key) : undefined}>
                   {selectable && <td className={`dt-selection ${fixedLayout ? 'dt-pinned-left' : ''}`}
                     style={fixedLayout ? { left: 0 } : undefined}>
                     <input type="checkbox" checked={selectedSet.has(key)}
@@ -890,6 +924,8 @@ export function DataTable({
                   </td>}
                 </tr>;
               })}
+            {virtualEnabled && bottomSpacer > 0 && <tr aria-hidden="true" className="dt-virtual-spacer">
+              <td colSpan={Math.max(colSpan, 1)} style={{ height: bottomSpacer }} /></tr>}
           </tbody>
         </table>
       </div>}
