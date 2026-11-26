@@ -8,7 +8,6 @@ import { filterRows, sortRows, paginateRows } from '../src/rowModel.js';
 import { toCsv } from '../src/csv.js';
 import { decodeView, encodeView, loadSavedViews, normalizeView, readViewParam, saveSavedViews,
   upsertSavedView, withViewParam } from '../src/viewState.js';
-import { Table as TableEsm, TableEdit as TableEditEsm, toCsv as toCsvEsm } from '../dist/index.js';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
   url: 'http://localhost/'
@@ -21,6 +20,10 @@ globalThis.Node = dom.window.Node;
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const { render, screen, within, fireEvent, waitFor, cleanup } =
   await import('@testing-library/react');
+// Load the bundle after jsdom: TanStack Virtual imports react-dom, whose React 18
+// input-event detection is fixed when the module is first evaluated.
+const { Table: TableEsm, TableEdit: TableEditEsm, toCsv: toCsvEsm } =
+  await import('../dist/index.js');
 afterEach(cleanup);
 
 const require = createRequire(import.meta.url);

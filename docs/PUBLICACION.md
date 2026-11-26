@@ -5,7 +5,7 @@ La página del proyecto, un Release de GitHub y un paquete instalable son public
 | Destino | Qué ofrece | Estado inicial |
 | --- | --- | --- |
 | GitHub Pages | Sitio con documentación y ejemplos interactivos | Publicado en <https://jazielisai.github.io/data_table_lib/> |
-| GitHub Releases | Una versión identificada por un tag, notas y archivos descargables | `v2.0.0` es el Release estable más reciente; los `alpha` anteriores permanecen disponibles |
+| GitHub Releases | Una versión identificada por un tag, notas y archivos descargables | `v2.1.0` es el Release estable más reciente; los `alpha` anteriores permanecen disponibles |
 | GitHub Packages | Un paquete en el registro npm de GitHub | No se publica al crear un release |
 | npmjs.com | Paquete que se instala con `npm install` | Comprueba las etiquetas actuales con `npm view @isai_dev/data_table_lib dist-tags`. |
 
